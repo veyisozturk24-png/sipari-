@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: siparis-is-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: siparis_is
+      POSTGRES_PASSWORD: siparis_is_dev
+      POSTGRES_DB: siparis_is
+    ports:
+      - "5432:5432"
+    volumes:
+      - siparis_is_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siparis_is -d siparis_is"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  siparis_is_postgres_data:
