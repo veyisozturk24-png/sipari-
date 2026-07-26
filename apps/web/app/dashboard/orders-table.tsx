@@ -1,443 +1,274 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import styles from './dashboard.module.css';
+import { useEffect, useMemo, useState } from "react";
 
-type OrderStatusType = 'new' | 'preparing' | 'shipping' | 'completed';
+import styles from "./orders-table.module.css";
 
-type Order = {
-  id: string;
-  customer: string;
-  phone: string;
-  initials: string;
-  channel: string;
-  product: string;
-  products: string[];
-  amount: string;
-  status: string;
-  statusType: OrderStatusType;
-  address: string;
-  note: string;
-  time: string;
-};
+import OrderDrawer from "./order-drawer";
+import OrderStatusBadge from "./order-status-badge";
 
-const initialOrders: Order[] = [
-  {
-    id: '#SP-1048',
-    customer: 'Ayşe Yılmaz',
-    phone: '0555 321 45 67',
-    initials: 'AY',
-    channel: 'WhatsApp',
-    product: '2 ürün',
-    products: [
-      'Oversize siyah sweatshirt × 1',
-      'Basic beyaz tişört × 1',
-    ],
-    amount: '₺1.240',
-    status: 'Yeni',
-    statusType: 'new',
-    address: 'Kadıköy, İstanbul',
-    note: 'Mümkünse bugün kargoya verilsin.',
-    time: '5 dk önce',
-  },
-  {
-    id: '#SP-1047',
-    customer: 'Mehmet Kaya',
-    phone: '0532 440 18 22',
-    initials: 'MK',
-    channel: 'Instagram',
-    product: '1 ürün',
-    products: ['Slim fit kot pantolon × 1'],
-    amount: '₺780',
-    status: 'Hazırlanıyor',
-    statusType: 'preparing',
-    address: 'Çankaya, Ankara',
-    note: 'Kapıda ödeme talep edildi.',
-    time: '18 dk önce',
-  },
-  {
-    id: '#SP-1046',
-    customer: 'Selin Demir',
-    phone: '0544 771 29 10',
-    initials: 'SD',
-    channel: 'WhatsApp',
-    product: '3 ürün',
-    products: [
-      'Kadın trençkot × 1',
-      'Deri omuz çantası × 1',
-      'Desenli fular × 1',
-    ],
-    amount: '₺2.150',
-    status: 'Kargoda',
-    statusType: 'shipping',
-    address: 'Nilüfer, Bursa',
-    note: 'Kargo takip bilgisi müşteriye gönderildi.',
-    time: '42 dk önce',
-  },
-  {
-    id: '#SP-1045',
-    customer: 'Can Öztürk',
-    phone: '0507 615 90 31',
-    initials: 'CÖ',
-    channel: 'Instagram',
-    product: '1 ürün',
-    products: ['Polo yaka lacivert tişört × 1'],
-    amount: '₺560',
-    status: 'Tamamlandı',
-    statusType: 'completed',
-    address: 'Konak, İzmir',
-    note: 'Sipariş teslim edildi.',
-    time: '1 sa önce',
-  },
-  {
-    id: '#SP-1044',
-    customer: 'Zeynep Arslan',
-    phone: '0538 219 74 56',
-    initials: 'ZA',
-    channel: 'Web',
-    product: '2 ürün',
-    products: [
-      'Kadın blazer ceket × 1',
-      'Kumaş pantolon × 1',
-    ],
-    amount: '₺1.890',
-    status: 'Tamamlandı',
-    statusType: 'completed',
-    address: 'Muratpaşa, Antalya',
-    note: 'Fatura e-posta ile gönderildi.',
-    time: '2 sa önce',
-  },
-];
+import { fetchOrders } from "./order-api";
 
-const nextStatus: Record<
-  OrderStatusType,
-  { status: string; statusType: OrderStatusType }
-> = {
-  new: {
-    status: 'Hazırlanıyor',
-    statusType: 'preparing',
-  },
-  preparing: {
-    status: 'Kargoda',
-    statusType: 'shipping',
-  },
-  shipping: {
-    status: 'Tamamlandı',
-    statusType: 'completed',
-  },
-  completed: {
-    status: 'Tamamlandı',
-    statusType: 'completed',
-  },
-};
-
-const actionLabels: Record<OrderStatusType, string> = {
-  new: 'Siparişi hazırla',
-  preparing: 'Kargoya ver',
-  shipping: 'Teslim edildi',
-  completed: 'Sipariş tamamlandı',
-};
+import type { ApiOrder } from "./order-types";
 
 export default function OrdersTable() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const selectedOrder =
-    orders.find((order) => order.id === selectedOrderId) ?? null;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState("ALL");
 
-  useEffect(() => {
+  const [selectedOrder, setSelectedOrder] =
+    useState<ApiOrder | null>(null);
+
+  const [drawerOpen, setDrawerOpen] =
+    useState(false);
+
+  async function loadOrders() {
+    setLoading(true);
+
     try {
-      const storedOrders = JSON.parse(
-        window.localStorage.getItem('siparis:custom-orders') || '[]',
+      const data = await fetchOrders();
+
+      setOrders(data);
+
+      setError("");
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        "Siparişler yüklenemedi.",
       );
-
-      if (Array.isArray(storedOrders) && storedOrders.length > 0) {
-        setOrders([
-          ...storedOrders,
-          ...initialOrders.filter(
-            (initialOrder) =>
-              !storedOrders.some(
-                (storedOrder: Order) => storedOrder.id === initialOrder.id,
-              ),
-          ),
-        ]);
-      }
-    } catch {
-      window.localStorage.removeItem('siparis:custom-orders');
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    function addNewOrder(event: Event) {
-      const customEvent = event as CustomEvent<Order>;
-
-      setOrders((currentOrders) => [
-        customEvent.detail,
-        ...currentOrders,
-      ]);
-
-      setToast(
-        `${customEvent.detail.id} siparişi başarıyla oluşturuldu.`,
-      );
-    }
-
-    window.addEventListener('siparis:new-order', addNewOrder);
-
-    return () => {
-      window.removeEventListener('siparis:new-order', addNewOrder);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = selectedOrder ? 'hidden' : '';
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [selectedOrder]);
-
-  useEffect(() => {
-    const closeWithEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedOrderId(null);
-      }
-    };
-
-    window.addEventListener('keydown', closeWithEscape);
-
-    return () => {
-      window.removeEventListener('keydown', closeWithEscape);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setToast(null);
-    }, 2500);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [toast]);
-
-  function advanceOrderStatus(orderId: string) {
-    const currentOrder = orders.find((order) => order.id === orderId);
-
-    if (!currentOrder || currentOrder.statusType === 'completed') {
-      return;
-    }
-
-    const updatedStatus = nextStatus[currentOrder.statusType];
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: updatedStatus.status,
-              statusType: updatedStatus.statusType,
-            }
-          : order,
-      ),
-    );
-
-    setToast(`${orderId} durumu “${updatedStatus.status}” olarak güncellendi.`);
   }
 
-  function sendCustomerMessage() {
-    if (!selectedOrder) {
-      return;
-    }
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
-    setToast(`${selectedOrder.customer} için mesaj ekranı hazırlanacak.`);
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.orderNumber
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        (order.customer?.name ?? "")
+  .toLowerCase()
+  .includes(search.toLowerCase())
+
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        order.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    });
+  }, [
+    orders,
+    search,
+    statusFilter,
+  ]);
+
+  function openOrder(
+    order: ApiOrder,
+  ) {
+    setSelectedOrder(order);
+
+    setDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false);
+
+    setSelectedOrder(null);
+  }
+
+  if (loading) {
+    return (
+      <p>Siparişler yükleniyor...</p>
+    );
+  }
+
+  if (error) {
+    return <p>{error}</p>;
   }
 
   return (
     <>
-      <div className={styles.tableWrap}>
-        <table>
+      <div
+        className={
+          styles.tableToolbar
+        }
+      >
+        <input
+          type="text"
+          placeholder="Sipariş veya müşteri ara..."
+          value={search}
+          onChange={(e) =>
+            setSearch(
+              e.target.value,
+            )
+          }
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) =>
+            setStatusFilter(
+              e.target.value,
+            )
+          }
+        >
+          <option value="ALL">
+            Tüm Durumlar
+          </option>
+
+          <option value="DRAFT">
+            Taslak
+          </option>
+
+          <option value="PREPARING">
+            Hazırlanıyor
+          </option>
+
+          <option value="SHIPPED">
+            Kargoda
+          </option>
+
+          <option value="DELIVERED">
+            Teslim Edildi
+          </option>
+
+          <option value="COMPLETED">
+            Tamamlandı
+          </option>
+        </select>
+
+        <button
+          onClick={loadOrders}
+        >
+          Yenile
+        </button>
+
+        <span>
+          {
+            filteredOrders.length
+          }{" "}
+          sipariş
+        </span>
+      </div>
+
+      {filteredOrders.length ===
+      0 ? (
+        <p>
+          Gösterilecek sipariş
+          bulunamadı.
+        </p>
+      ) : (
+        <table
+          className={
+            styles.ordersTable
+          }
+        >
           <thead>
             <tr>
-              <th>SİPARİŞ</th>
-              <th>MÜŞTERİ</th>
-              <th>KANAL</th>
-              <th>TUTAR</th>
-              <th>DURUM</th>
-              <th>ZAMAN</th>
-              <th />
+              <th>
+                Sipariş No
+              </th>
+
+              <th>
+                Müşteri
+              </th>
+
+              <th>Tutar</th>
+
+              <th>
+                Durum
+              </th>
+
+              <th>
+                Tarih
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {orders.map((order) => (
-              <tr
-                key={order.id}
-                className={styles.clickableRow}
-                onClick={() => setSelectedOrderId(order.id)}
-              >
-                <td>
-                  <strong>{order.id}</strong>
-                </td>
+            {filteredOrders.map(
+              (order) => (
+                <tr
+                  key={order.id}
+                  className={
+                    styles.clickableRow
+                  }
+                  onClick={() =>
+                    openOrder(
+                      order,
+                    )
+                  }
+                >
+                  <td>
+                    {
+                      order.orderNumber
+                    }
+                  </td>
 
-                <td>
-                  <div className={styles.customer}>
-                    <span>{order.initials}</span>
+                  <td>
+                    {
+                      <td>
+  {order.customer?.name ?? "-"}
+</td>
+                    }
+                  </td>
 
-                    <div>
-                      <strong>{order.customer}</strong>
-                      <small>{order.product}</small>
-                    </div>
-                  </div>
-                </td>
+                  <td>
+                    {new Intl.NumberFormat(
+                      "tr-TR",
+                      {
+                        style:
+                          "currency",
+                        currency:
+                          "TRY",
+                      },
+                    ).format(
+                      order.totalAmount,
+                    )}
+                  </td>
 
-                <td>
-                  <span className={styles.channelBadge}>
-                    {order.channel}
-                  </span>
-                </td>
+                  <td>
+                    <OrderStatusBadge
+                      status={
+                        order.status
+                      }
+                    />
+                  </td>
 
-                <td>
-                  <strong>{order.amount}</strong>
-                </td>
-
-                <td>
-                  <span
-                    className={`${styles.status} ${styles[order.statusType]}`}
-                  >
-                    <i /> {order.status}
-                  </span>
-                </td>
-
-                <td className={styles.time}>{order.time}</td>
-
-                <td>
-                  <button
-                    type="button"
-                    className={styles.rowButton}
-                    aria-label={`${order.id} siparişini görüntüle`}
-                  >
-                    ›
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  <td>
+                    {new Date(
+                      order.createdAt,
+                    ).toLocaleString(
+                      "tr-TR",
+                    )}
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
-      </div>
-
-      {selectedOrder && (
-        <div
-          className={styles.drawerBackdrop}
-          onClick={() => setSelectedOrderId(null)}
-        >
-          <aside
-            className={styles.orderDrawer}
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${selectedOrder.id} sipariş detayı`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={styles.drawerHeader}>
-              <div>
-                <span>SİPARİŞ DETAYI</span>
-                <h2>{selectedOrder.id}</h2>
-                <small>{selectedOrder.time}</small>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedOrderId(null)}
-                aria-label="Paneli kapat"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className={styles.drawerStatus}>
-              <span
-                className={`${styles.status} ${
-                  styles[selectedOrder.statusType]
-                }`}
-              >
-                <i /> {selectedOrder.status}
-              </span>
-
-              <span>{selectedOrder.channel} üzerinden geldi</span>
-            </div>
-
-            <section className={styles.drawerSection}>
-              <h3>Müşteri</h3>
-
-              <div className={styles.drawerCustomer}>
-                <span>{selectedOrder.initials}</span>
-
-                <div>
-                  <strong>{selectedOrder.customer}</strong>
-                  <small>{selectedOrder.phone}</small>
-                </div>
-              </div>
-            </section>
-
-            <section className={styles.drawerSection}>
-              <h3>Ürünler</h3>
-
-              <div className={styles.productList}>
-                {selectedOrder.products.map((product) => (
-                  <div key={product}>
-                    <span>{product}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className={styles.drawerTotal}>
-                <span>Toplam</span>
-                <strong>{selectedOrder.amount}</strong>
-              </div>
-            </section>
-
-            <section className={styles.drawerSection}>
-              <h3>Teslimat adresi</h3>
-              <p>{selectedOrder.address}</p>
-            </section>
-
-            <section className={styles.drawerSection}>
-              <h3>Sipariş notu</h3>
-              <p>{selectedOrder.note}</p>
-            </section>
-
-            <div className={styles.drawerActions}>
-              <button
-                type="button"
-                className={styles.secondaryAction}
-                onClick={sendCustomerMessage}
-              >
-                Müşteriye yaz
-              </button>
-
-              <button
-                type="button"
-                className={styles.drawerPrimaryAction}
-                disabled={selectedOrder.statusType === 'completed'}
-                onClick={() => advanceOrderStatus(selectedOrder.id)}
-              >
-                {actionLabels[selectedOrder.statusType]}
-              </button>
-            </div>
-          </aside>
-        </div>
       )}
-
-      {toast && (
-        <div className={styles.toast} role="status">
-          <span>✓</span>
-          {toast}
-        </div>
-      )}
+            <OrderDrawer
+        open={drawerOpen}
+        order={selectedOrder}
+        onClose={() => {
+          closeDrawer();
+          loadOrders();
+        }}
+      />
     </>
   );
 }

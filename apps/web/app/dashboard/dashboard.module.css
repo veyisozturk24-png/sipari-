@@ -1423,3 +1423,73 @@
     padding: 0 10px;
   }
 }
+
+/* OrdersTable additions */
+
+.tableToolbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+}
+
+.tableToolbar input{
+  flex:1;
+  min-width:240px;
+  padding:10px 14px;
+  border:1px solid #d7dbe7;
+  border-radius:10px;
+  background:#fff;
+}
+
+.tableToolbar select{
+  padding:10px 14px;
+  border:1px solid #d7dbe7;
+  border-radius:10px;
+  background:#fff;
+}
+
+.tableToolbar button{
+  padding:10px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background:#5b4df5;
+  color:#fff;
+  font-weight:600;
+}
+
+.tableToolbar span{
+  margin-left:auto;
+  color:#667085;
+  font-size:.9rem;
+}
+
+.ordersTable{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+.ordersTable th{
+  text-align:left;
+  padding:14px;
+  border-bottom:1px solid #eceff4;
+  color:#667085;
+  font-size:.85rem;
+}
+
+.ordersTable td{
+  padding:16px 14px;
+  border-bottom:1px solid #f1f4f8;
+}
+
+.clickableRow{
+  transition:background .15s ease;
+  cursor:pointer;
+}
+
+.clickableRow:hover{
+  background:#f8f9ff;
+}

@@ -1,0 +1,661 @@
+'u  unitPrice: string | number;
+  totalPrice: string | number;
+};
+
+type ApiCustomer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+};
+type ApiOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: string | number;
+  customerNote: string | null;
+  internalNote: string | null;
+  shippingName: string | null;
+  shippingPhone: string | null;
+  shippingCity: string | null;
+  shippingDistrict: string | null;
+  shippingAddress: string | null;
+  createdAt: string;
+  customer: ApiCustomer | null;
+  items: ApiOrderItem[];
+};
+};se client';
+
+type ApiCustomer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+};
+
+type ApiOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: string | number;
+  customerNote: string | null;
+  internalNote: string | null;
+  shippingName: string | null;
+  shippingPhone: string | null;
+  shippingCity: string | null;
+  shippingDistrict: string | null;
+  shippingAddress: string | null;
+  createdAt: string;
+  customer: ApiCustomer | null;
+  items: ApiOrderItem[];
+};
+
+
+const COMPANY_ID = 'e630b46e-358f-4d9b-9f8e-62c40829b580';
+const API_URL = 'http://localhost:3001';
+
+type ApiOrderItem = {
+  id: string;
+  productName: string;
+  quantity: number;
+
+
+function createInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toLocaleUpperCase('tr-TR'))
+    .join('');
+}
+
+function formatCurrency(value: string | number) {
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'TRY',
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
+}
+
+function formatRelativeTime(value: string) {
+  const createdAt = new Date(value).getTime();
+  const difference = Math.max(0, Date.now() - createdAt);
+  const minutes = Math.floor(difference / 60_000);
+
+  if (minutes < 1) {
+    return 'Şimdi';
+  }
+
+  if (minutes < 60) {
+    return `${minutes} dk önce`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours} sa önce`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days} gün önce`;
+}
+
+function mapStatus(status: string): {
+  status: string;
+  statusType: OrderStatusType;
+} {
+  switch (status) {
+    case 'PREPARING':
+    case 'PROCESSING':
+      return {
+        status: 'Hazırlanıyor',
+        statusType: 'preparing',
+      };
+
+    case 'SHIPPED':
+    case 'IN_TRANSIT':
+      return {
+        status: 'Kargoda',
+        statusType: 'shipping',
+      };
+
+    case 'DELIVERED':
+    case 'COMPLETED':
+      return {
+        status: 'Tamamlandı',
+        statusType: 'completed',
+      };
+
+    default:
+      return {
+        status: 'Yeni',
+        statusType: 'new',
+      };
+  }
+}
+
+function mapApiOrder(order: ApiOrder): Order {
+  const customerName =
+    order.customer?.name ||
+    order.shippingName ||
+    'Misafir müşteri';
+
+  const mappedStatus = mapStatus(order.status);
+
+  const productCount = order.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
+  const addressParts = [
+    order.shippingDistrict,
+    order.shippingCity,
+    order.shippingAddress,
+  ].filter(Boolean);
+
+  return {
+    id: order.orderNumber,
+    customer: customerName,
+    phone:
+      order.customer?.phone ||
+      order.shippingPhone ||
+      'Telefon bilgisi yok',
+    initials: createInitials(customerName) || 'M',
+    channel: 'Panel',
+    product: `${productCount} ürün`,
+    products: order.items.map(
+      (item) => `${item.productName} × ${item.quantity}`,
+    ),
+    amount: formatCurrency(order.totalAmount),
+    status: mappedStatus.status,
+    statusType: mappedStatus.statusType,
+    address:
+      addressParts.join(', ') ||
+      'Adres henüz eklenmedi',
+    note:
+      order.customerNote ||
+      order.internalNote ||
+      'Sipariş notu bulunmuyor.',
+    time: formatRelativeTime(order.createdAt),
+  };
+}
+
+const initialOrders: Order[] = [
+  {
+    id: '#SP-1048',
+    customer: 'Ayşe Yılmaz',
+    phone: '0555 321 45 67',
+    initials: 'AY',
+    channel: 'WhatsApp',
+    product: '2 ürün',
+    products: [
+      'Oversize siyah sweatshirt × 1',
+      'Basic beyaz tişört × 1',
+    ],
+    amount: '₺1.240',
+    status: 'Yeni',
+    statusType: 'new',
+    address: 'Kadıköy, İstanbul',
+    note: 'Mümkünse bugün kargoya verilsin.',
+    time: '5 dk önce',
+  },
+  {
+    id: '#SP-1047',
+    customer: 'Mehmet Kaya',
+    phone: '0532 440 18 22',
+    initials: 'MK',
+    channel: 'Instagram',
+    product: '1 ürün',
+    products: ['Slim fit kot pantolon × 1'],
+    amount: '₺780',
+    status: 'Hazırlanıyor',
+    statusType: 'preparing',
+    address: 'Çankaya, Ankara',
+    note: 'Kapıda ödeme talep edildi.',
+    time: '18 dk önce',
+  },
+  {
+    id: '#SP-1046',
+    customer: 'Selin Demir',
+    phone: '0544 771 29 10',
+    initials: 'SD',
+    channel: 'WhatsApp',
+    product: '3 ürün',
+    products: [
+      'Kadın trençkot × 1',
+      'Deri omuz çantası × 1',
+      'Desenli fular × 1',
+    ],
+    amount: '₺2.150',
+    status: 'Kargoda',
+    statusType: 'shipping',
+    address: 'Nilüfer, Bursa',
+    note: 'Kargo takip bilgisi müşteriye gönderildi.',
+    time: '42 dk önce',
+  },
+  {
+    id: '#SP-1045',
+    customer: 'Can Öztürk',
+    phone: '0507 615 90 31',
+    initials: 'CÖ',
+    channel: 'Instagram',
+    product: '1 ürün',
+    products: ['Polo yaka lacivert tişört × 1'],
+    amount: '₺560',
+    status: 'Tamamlandı',
+    statusType: 'completed',
+    address: 'Konak, İzmir',
+    note: 'Sipariş teslim edildi.',
+    time: '1 sa önce',
+  },
+  {
+    id: '#SP-1044',
+    customer: 'Zeynep Arslan',
+    phone: '0538 219 74 56',
+    initials: 'ZA',
+    channel: 'Web',
+    product: '2 ürün',
+    products: [
+      'Kadın blazer ceket × 1',
+      'Kumaş pantolon × 1',
+    ],
+    amount: '₺1.890',
+    status: 'Tamamlandı',
+    statusType: 'completed',
+    address: 'Muratpaşa, Antalya',
+    note: 'Fatura e-posta ile gönderildi.',
+    time: '2 sa önce',
+  },
+];
+
+const nextStatus: Record<
+  OrderStatusType,
+  { status: string; statusType: OrderStatusType }
+> = {
+  new: {
+    status: 'Hazırlanıyor',
+    statusType: 'preparing',
+  },
+  preparing: {
+    status: 'Kargoda',
+    statusType: 'shipping',
+  },
+  shipping: {
+    status: 'Tamamlandı',
+    statusType: 'completed',
+  },
+  completed: {
+    status: 'Tamamlandı',
+    statusType: 'completed',
+  },
+};
+
+const actionLabels: Record<OrderStatusType, string> = {
+  new: 'Siparişi hazırla',
+  preparing: 'Kargoya ver',
+  shipping: 'Teslim edildi',
+  completed: 'Sipariş tamamlandı',
+};
+
+export default function OrdersTable() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const selectedOrder =
+    orders.find((order) => order.id === selectedOrderId) ?? null;
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadOrders() {
+      setIsLoading(true);
+      setLoadError('');
+
+      try {
+        const response = await fetch(
+          `${API_URL}/orders?companyId=${COMPANY_ID}`,
+          {
+            cache: 'no-store',
+          },
+        );
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+
+          throw new Error(
+            errorBody?.message ||
+              'Siparişler alınırken bir hata oluştu.',
+          );
+        }
+
+        const apiOrders = (await response.json()) as ApiOrder[];
+
+        if (isActive) {
+          setOrders(apiOrders.map(mapApiOrder));
+        }
+      } catch (error) {
+        if (isActive) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : 'Siparişler alınamadı.',
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadOrders();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    function addNewOrder(event: Event) {
+      const customEvent = event as CustomEvent<Order>;
+
+      setOrders((currentOrders) => [
+        customEvent.detail,
+        ...currentOrders,
+      ]);
+
+      setToast(
+        `${customEvent.detail.id} siparişi başarıyla oluşturuldu.`,
+      );
+    }
+
+    window.addEventListener('siparis:new-order', addNewOrder);
+
+    return () => {
+      window.removeEventListener('siparis:new-order', addNewOrder);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = selectedOrder ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedOrder]);
+
+  useEffect(() => {
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedOrderId(null);
+      }
+    };
+
+    window.addEventListener('keydown', closeWithEscape);
+
+    return () => {
+      window.removeEventListener('keydown', closeWithEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setToast(null);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [toast]);
+
+  function advanceOrderStatus(orderId: string) {
+    const currentOrder = orders.find((order) => order.id === orderId);
+
+    if (!currentOrder || currentOrder.statusType === 'completed') {
+      return;
+    }
+
+    const updatedStatus = nextStatus[currentOrder.statusType];
+
+    setOrders((currentOrders) =>
+      currentOrders.map((order) =>
+        order.id === orderId
+          ? {
+              ...order,
+              status: updatedStatus.status,
+              statusType: updatedStatus.statusType,
+            }
+          : order,
+      ),
+    );
+
+    setToast(`${orderId} durumu “${updatedStatus.status}” olarak güncellendi.`);
+  }
+
+  function sendCustomerMessage() {
+    if (!selectedOrder) {
+      return;
+    }
+
+    setToast(`${selectedOrder.customer} için mesaj ekranı hazırlanacak.`);
+  }
+
+  return (
+    <>
+      <div className={styles.tableWrap}>
+        <table>
+          <thead>
+            <tr>
+              <th>SİPARİŞ</th>
+              <th>MÜŞTERİ</th>
+              <th>KANAL</th>
+              <th>TUTAR</th>
+              <th>DURUM</th>
+              <th>ZAMAN</th>
+              <th />
+            </tr>
+          </thead>
+
+          <tbody>
+            {isLoading && (
+              <tr>
+                <td colSpan={7}>
+                  Siparişler yükleniyor...
+                </td>
+              </tr>
+            )}
+
+            {!isLoading && loadError && (
+              <tr>
+                <td colSpan={7}>
+                  {loadError}
+                </td>
+              </tr>
+            )}
+
+            {!isLoading &&
+              !loadError &&
+              orders.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    Henüz sipariş bulunmuyor.
+                  </td>
+                </tr>
+              )}
+
+            {!isLoading &&
+              !loadError &&
+              orders.map((order) => (
+              <tr
+                key={order.id}
+                className={styles.clickableRow}
+                onClick={() => setSelectedOrderId(order.id)}
+              >
+                <td>
+                  <strong>{order.id}</strong>
+                </td>
+
+                <td>
+                  <div className={styles.customer}>
+                    <span>{order.initials}</span>
+
+                    <div>
+                      <strong>{order.customer}</strong>
+                      <small>{order.product}</small>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span className={styles.channelBadge}>
+                    {order.channel}
+                  </span>
+                </td>
+
+                <td>
+                  <strong>{order.amount}</strong>
+                </td>
+
+                <td>
+                  <span
+                    className={`${styles.status} ${styles[order.statusType]}`}
+                  >
+                    <i /> {order.status}
+                  </span>
+                </td>
+
+                <td className={styles.time}>{order.time}</td>
+
+                <td>
+                  <button
+                    type="button"
+                    className={styles.rowButton}
+                    aria-label={`${order.id} siparişini görüntüle`}
+                  >
+                    ›
+                  </button>
+                </td>
+              </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedOrder && (
+        <div
+          className={styles.drawerBackdrop}
+          onClick={() => setSelectedOrderId(null)}
+        >
+          <aside
+            className={styles.orderDrawer}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedOrder.id} sipariş detayı`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.drawerHeader}>
+              <div>
+                <span>SİPARİŞ DETAYI</span>
+                <h2>{selectedOrder.id}</h2>
+                <small>{selectedOrder.time}</small>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedOrderId(null)}
+                aria-label="Paneli kapat"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.drawerStatus}>
+              <span
+                className={`${styles.status} ${
+                  styles[selectedOrder.statusType]
+                }`}
+              >
+                <i /> {selectedOrder.status}
+              </span>
+
+              <span>{selectedOrder.channel} üzerinden geldi</span>
+            </div>
+
+            <section className={styles.drawerSection}>
+              <h3>Müşteri</h3>
+
+              <div className={styles.drawerCustomer}>
+                <span>{selectedOrder.initials}</span>
+
+                <div>
+                  <strong>{selectedOrder.customer}</strong>
+                  <small>{selectedOrder.phone}</small>
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.drawerSection}>
+              <h3>Ürünler</h3>
+
+              <div className={styles.productList}>
+                {selectedOrder.products.map((product) => (
+                  <div key={product}>
+                    <span>{product}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className={styles.drawerTotal}>
+                <span>Toplam</span>
+                <strong>{selectedOrder.amount}</strong>
+              </div>
+            </section>
+
+            <section className={styles.drawerSection}>
+              <h3>Teslimat adresi</h3>
+              <p>{selectedOrder.address}</p>
+            </section>
+
+            <section className={styles.drawerSection}>
+              <h3>Sipariş notu</h3>
+              <p>{selectedOrder.note}</p>
+            </section>
+
+            <div className={styles.drawerActions}>
+              <button
+                type="button"
+                className={styles.secondaryAction}
+                onClick={sendCustomerMessage}
+              >
+                Müşteriye yaz
+              </button>
+
+              <button
+                type="button"
+                className={styles.drawerPrimaryAction}
+                disabled={selectedOrder.statusType === 'completed'}
+                onClick={() => advanceOrderStatus(selectedOrder.id)}
+              >
+                {actionLabels[selectedOrder.statusType]}
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {toast && (
+        <div className={styles.toast} role="status">
+          <span>✓</span>
+          {toast}
+        </div>
+      )}
+    </>
+  );
+}

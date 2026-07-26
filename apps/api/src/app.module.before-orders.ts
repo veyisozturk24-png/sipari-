@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { PrismaModule } from './database/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { CustomersModule } from './customers/customers.module';
-import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { OrdersModule } from './orders/orders.module';
     PrismaModule,
     ProductsModule,
     CustomersModule,
-    OrdersModule,
   ],
   controllers: [AppController],
 })

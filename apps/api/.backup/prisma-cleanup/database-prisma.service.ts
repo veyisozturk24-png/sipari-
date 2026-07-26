@@ -4,7 +4,6 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 
@@ -15,9 +14,12 @@ export class PrismaService
 {
   private readonly logger = new Logger(PrismaService.name);
 
-  constructor(configService: ConfigService) {
-    const connectionString =
-      configService.getOrThrow<string>('DATABASE_URL');
+  constructor() {
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error('DATABASE_URL ortam değişkeni tanımlı değil.');
+    }
 
     const adapter = new PrismaPg({
       connectionString,

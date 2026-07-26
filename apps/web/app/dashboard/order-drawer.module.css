@@ -1,0 +1,172 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: all .25s ease;
+  z-index: 90;
+}
+
+.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: -560px;
+  width: 560px;
+  max-width: 100%;
+  height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0,0,0,.12);
+  transition: right .25s ease;
+  z-index: 100;
+}
+
+.open {
+  right: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #ececec;
+}
+
+.header h2 {
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.header small {
+  color: #888;
+}
+
+.closeButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 26px;
+}
+
+.section {
+  padding: 22px 24px;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.customerCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.summaryRow:last-child {
+  margin-bottom: 0;
+}
+
+.summaryRow span {
+  color: #666;
+}
+
+.summaryRow strong {
+  text-align: right;
+}
+
+.statusSelect {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  font-size: 14px;
+}
+
+.address {
+  line-height: 1.7;
+}
+
+.note {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  padding: 12px;
+  font: inherit;
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #ececec;
+}
+
+.secondaryButton {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+}
+
+.primaryButton {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .drawer {
+    width: 100%;
+  }
+
+  .header,
+  .section,
+  .footer {
+    padding: 18px;
+  }
+}

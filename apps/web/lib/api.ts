@@ -1,40 +1,25 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-type ApiErrorResponse = {
-  message?: string | string[];
-  error?: string;
-  statusCode?: number;
-};
-
-export const COMPANY_ID =
-  process.env.NEXT_PUBLIC_COMPANY_ID ?? '';
-
-export async function apiRequest<T>(
+export async function apiFetch<T>(
   path: string,
-  options: RequestInit = {},
+  options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      cache: "no-store",
+      ...options,
     },
-  });
+  );
 
   if (!response.ok) {
-    let errorData: ApiErrorResponse | undefined;
+    let message = "API isteği başarısız.";
 
     try {
-      errorData = (await response.json()) as ApiErrorResponse;
+      message = await response.text();
     } catch {
-      errorData = undefined;
+      // Varsayılan mesaj kullanılacak.
     }
-
-    const message = Array.isArray(errorData?.message)
-      ? errorData.message.join(', ')
-      : errorData?.message ??
-        `İstek başarısız oldu (${response.status})`;
 
     throw new Error(message);
   }

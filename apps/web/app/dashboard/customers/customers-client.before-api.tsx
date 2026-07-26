@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import styles from './customers.module.css';
 
 type Channel = 'WhatsApp' | 'Instagram' | 'Facebook' | 'Web';
 
 type Customer = {
-  id: string | number;
+  id: number;
   name: string;
   initials: string;
   phone: string;
@@ -28,7 +28,7 @@ type Customer = {
   }[];
 };
 
-const demoCustomers: Customer[] = [
+const customers: Customer[] = [
   {
     id: 1,
     name: 'Ayşe Yılmaz',
@@ -191,105 +191,11 @@ function formatCurrency(value: number) {
 }
 
 export default function CustomersClient() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [channel, setChannel] = useState<'all' | Channel>('all');
   const [selectedCustomerId, setSelectedCustomerId] =
-    useState<string | number | null>(null);
+    useState<number | null>(null);
   const [toast, setToast] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isSavingCustomer, setIsSavingCustomer] = useState(false);
-  const [createCustomerError, setCreateCustomerError] = useState('');
-  const [newCustomer, setNewCustomer] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    notes: '',
-  });
-
-  useEffect(() => {
-    const companyId = process.env.NEXT_PUBLIC_COMPANY_ID;
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-    if (!companyId) {
-      setLoadError('NEXT_PUBLIC_COMPANY_ID tanımlı değil.');
-      setIsLoading(false);
-      return;
-    }
-
-    const resolvedCompanyId = companyId;
-
-    async function loadCustomers() {
-      try {
-        setIsLoading(true);
-        setLoadError('');
-
-        const response = await fetch(
-          `${apiUrl}/customers?companyId=${encodeURIComponent(resolvedCompanyId)}`,
-        );
-
-        if (!response.ok) {
-          throw new Error(`Müşteriler alınamadı: ${response.status}`);
-        }
-
-        const data: {
-          id: string;
-          name: string;
-          phone?: string | null;
-          email?: string | null;
-          notes?: string | null;
-        }[] = await response.json();
-
-        setCustomers(
-          data.map((customer) => {
-            const nameParts = customer.name
-              .trim()
-              .split(/\s+/)
-              .filter(Boolean);
-
-            const initials =
-              nameParts
-                .slice(0, 2)
-                .map((part) =>
-                  part.charAt(0).toLocaleUpperCase('tr-TR'),
-                )
-                .join('') || 'M';
-
-            return {
-              id: customer.id,
-              name: customer.name,
-              initials,
-              phone: customer.phone ?? '-',
-              email: customer.email ?? '-',
-              channel: 'Web',
-              city: '-',
-              totalOrders: 0,
-              totalSpent: 0,
-              lastContact: 'Henüz yok',
-              status: 'new',
-              tags: ['Yeni müşteri'],
-              notes:
-                customer.notes ?? 'Müşteri notu bulunmuyor.',
-              orders: [],
-            };
-          }),
-        );
-      } catch (error) {
-        setLoadError(
-          error instanceof Error
-            ? error.message
-            : 'Müşteriler yüklenirken hata oluştu.',
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadCustomers();
-  }, []);
 
   const selectedCustomer =
     customers.find((customer) => customer.id === selectedCustomerId) ??
@@ -310,7 +216,7 @@ export default function CustomersClient() {
 
       return matchesSearch && matchesChannel;
     });
-  }, [customers, search, channel]);
+  }, [search, channel]);
 
   const totals = useMemo(() => {
     return {
@@ -327,7 +233,7 @@ export default function CustomersClient() {
         0,
       ),
     };
-  }, [customers]);
+  }, []);
 
   function showToast(message: string) {
     setToast(message);
@@ -335,111 +241,6 @@ export default function CustomersClient() {
     window.setTimeout(() => {
       setToast('');
     }, 2400);
-  }
-
-  async function createCustomer(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-
-    const companyId = process.env.NEXT_PUBLIC_COMPANY_ID;
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-    if (!companyId) {
-      setCreateCustomerError(
-        'NEXT_PUBLIC_COMPANY_ID tanımlı değil.',
-      );
-      return;
-    }
-
-    try {
-      setIsSavingCustomer(true);
-      setCreateCustomerError('');
-
-      const response = await fetch(`${apiUrl}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          companyId,
-          name: newCustomer.name.trim(),
-          phone: newCustomer.phone.trim() || undefined,
-          email: newCustomer.email.trim() || undefined,
-          notes: newCustomer.notes.trim() || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-
-        throw new Error(
-          errorBody ||
-            `Müşteri kaydedilemedi: ${response.status}`,
-        );
-      }
-
-      const createdCustomer: {
-        id: string;
-        name: string;
-        phone?: string | null;
-        email?: string | null;
-        notes?: string | null;
-      } = await response.json();
-
-      const nameParts = createdCustomer.name
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
-
-      const initials =
-        nameParts
-          .slice(0, 2)
-          .map((part) =>
-            part.charAt(0).toLocaleUpperCase('tr-TR'),
-          )
-          .join('') || 'M';
-
-      setCustomers((current) => [
-        {
-          id: createdCustomer.id,
-          name: createdCustomer.name,
-          initials,
-          phone: createdCustomer.phone ?? '-',
-          email: createdCustomer.email ?? '-',
-          channel: 'Web',
-          city: '-',
-          totalOrders: 0,
-          totalSpent: 0,
-          lastContact: 'Henüz yok',
-          status: 'new',
-          tags: ['Yeni müşteri'],
-          notes:
-            createdCustomer.notes ?? 'Müşteri notu bulunmuyor.',
-          orders: [],
-        },
-        ...current,
-      ]);
-
-      setNewCustomer({
-        name: '',
-        phone: '',
-        email: '',
-        notes: '',
-      });
-
-      setIsCreateModalOpen(false);
-      showToast(`${createdCustomer.name} başarıyla kaydedildi.`);
-    } catch (error) {
-      setCreateCustomerError(
-        error instanceof Error
-          ? error.message
-          : 'Müşteri kaydedilirken hata oluştu.',
-      );
-    } finally {
-      setIsSavingCustomer(false);
-    }
   }
 
   return (
@@ -541,7 +342,9 @@ export default function CustomersClient() {
           <button
             type="button"
             className={styles.addButton}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() =>
+              showToast('Yeni müşteri formu sonraki adımda açılacak.')
+            }
           >
             <span>＋</span>
             Yeni müşteri
@@ -701,126 +504,6 @@ export default function CustomersClient() {
           </div>
         </section>
       </main>
-
-      {isCreateModalOpen && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setIsCreateModalOpen(false)}
-        >
-          <section
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-customer-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className={styles.modalHeader}>
-              <div>
-                <span>YENİ KAYIT</span>
-                <h2 id="create-customer-title">Yeni müşteri</h2>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Yeni müşteri formunu kapat"
-                onClick={() => setIsCreateModalOpen(false)}
-              >
-                ×
-              </button>
-            </header>
-
-            <form
-              className={styles.customerForm}
-              onSubmit={createCustomer}
-            >
-              <label>
-                <span>Ad soyad *</span>
-                <input
-                  required
-                  value={newCustomer.name}
-                  onChange={(event) =>
-                    setNewCustomer((current) => ({
-                      ...current,
-                      name: event.target.value,
-                    }))
-                  }
-                  placeholder="Örn. Zeynep Yılmaz"
-                />
-              </label>
-
-              <label>
-                <span>Telefon</span>
-                <input
-                  value={newCustomer.phone}
-                  onChange={(event) =>
-                    setNewCustomer((current) => ({
-                      ...current,
-                      phone: event.target.value,
-                    }))
-                  }
-                  placeholder="05XX XXX XX XX"
-                />
-              </label>
-
-              <label>
-                <span>E-posta</span>
-                <input
-                  type="email"
-                  value={newCustomer.email}
-                  onChange={(event) =>
-                    setNewCustomer((current) => ({
-                      ...current,
-                      email: event.target.value,
-                    }))
-                  }
-                  placeholder="musteri@example.com"
-                />
-              </label>
-
-              <label>
-                <span>Müşteri notu</span>
-                <textarea
-                  rows={4}
-                  value={newCustomer.notes}
-                  onChange={(event) =>
-                    setNewCustomer((current) => ({
-                      ...current,
-                      notes: event.target.value,
-                    }))
-                  }
-                  placeholder="Müşteri hakkında kısa bir not..."
-                />
-              </label>
-
-              {createCustomerError && (
-                <p className={styles.formError}>
-                  {createCustomerError}
-                </p>
-              )}
-
-              <footer className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.cancelButton}
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  Vazgeç
-                </button>
-
-                <button
-                  type="submit"
-                  className={styles.saveButton}
-                  disabled={isSavingCustomer}
-                >
-                  {isSavingCustomer
-                    ? 'Kaydediliyor...'
-                    : 'Müşteriyi kaydet'}
-                </button>
-              </footer>
-            </form>
-          </section>
-        </div>
-      )}
 
       {selectedCustomer && (
         <div

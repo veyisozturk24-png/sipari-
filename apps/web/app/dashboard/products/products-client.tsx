@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { apiRequest, COMPANY_ID } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import type { ApiProduct } from '@/types/api-product';
 import styles from './products.module.css';
 
@@ -71,42 +71,37 @@ export default function ProductsClient() {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    async function loadProducts() {
-      if (!COMPANY_ID) {
-        setError('NEXT_PUBLIC_COMPANY_ID tanımlı değil.');
-        setIsLoading(false);
-        return;
-      }
+  async function loadProducts() {
+    setIsLoading(true);
 
-      try {
-        setError('');
+    try {
+      setError('');
 
-        const data = await apiRequest<ApiProduct[]>(
-          `/products?companyId=${encodeURIComponent(COMPANY_ID)}`,
-        );
+      const data = await apiFetch<ApiProduct[]>('/products');
 
-        setProducts(data.map(mapApiProduct));
-      } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'Ürünler yüklenemedi.',
-        );
-      } finally {
-        setIsLoading(false);
-      }
+      setProducts(data.map(mapApiProduct));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Ürünler yüklenemedi.',
+      );
+    } finally {
+      setIsLoading(false);
     }
+  }
 
-    void loadProducts();
-  }, []);
+  void loadProducts();
+}, []);
 
-  useEffect(() => {
-    document.body.style.overflow = isModalOpen ? 'hidden' : '';
+useEffect(() => {
+  document.body.style.overflow = isModalOpen ? 'hidden' : '';
 
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isModalOpen]);
+  return () => {
+    document.body.style.overflow = '';
+  };
+}, [isModalOpen]);
+        
 
   useEffect(() => {
     if (!toast) {
@@ -188,8 +183,8 @@ export default function ProductsClient() {
     );
 
     try {
-      const updated = await apiRequest<ApiProduct>(
-        `/products/${productId}?companyId=${encodeURIComponent(COMPANY_ID)}`,
+      const updated = await apiFetch<ApiProduct>(
+  `/products/${productId}`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -234,8 +229,8 @@ export default function ProductsClient() {
         : 'ACTIVE';
 
     try {
-      const updated = await apiRequest<ApiProduct>(
-        `/products/${productId}?companyId=${encodeURIComponent(COMPANY_ID)}`,
+      const updated = await apiFetch<ApiProduct>(
+  `/products/${productId}`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -290,19 +285,15 @@ export default function ProductsClient() {
       return;
     }
 
-    if (!COMPANY_ID) {
-      setError('NEXT_PUBLIC_COMPANY_ID tanımlı değil.');
-      return;
-    }
 
     const price = Math.max(0, Number(form.price) || 0);
     const stock = Math.max(0, Number(form.stock) || 0);
 
     try {
-      const created = await apiRequest<ApiProduct>('/products', {
+      const created = await apiFetch<ApiProduct>('/products', {
         method: 'POST',
         body: JSON.stringify({
-          companyId: COMPANY_ID,
+
           name: form.name.trim(),
           sku: form.sku.trim().toLocaleUpperCase('tr-TR'),
           description: form.category

@@ -200,8 +200,6 @@ export default function CustomersClient() {
     useState<string | number | null>(null);
   const [toast, setToast] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isSavingCustomer, setIsSavingCustomer] = useState(false);
-  const [createCustomerError, setCreateCustomerError] = useState('');
   const [newCustomer, setNewCustomer] = useState({
     name: '',
     phone: '',
@@ -335,111 +333,6 @@ export default function CustomersClient() {
     window.setTimeout(() => {
       setToast('');
     }, 2400);
-  }
-
-  async function createCustomer(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-
-    const companyId = process.env.NEXT_PUBLIC_COMPANY_ID;
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-    if (!companyId) {
-      setCreateCustomerError(
-        'NEXT_PUBLIC_COMPANY_ID tanımlı değil.',
-      );
-      return;
-    }
-
-    try {
-      setIsSavingCustomer(true);
-      setCreateCustomerError('');
-
-      const response = await fetch(`${apiUrl}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          companyId,
-          name: newCustomer.name.trim(),
-          phone: newCustomer.phone.trim() || undefined,
-          email: newCustomer.email.trim() || undefined,
-          notes: newCustomer.notes.trim() || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-
-        throw new Error(
-          errorBody ||
-            `Müşteri kaydedilemedi: ${response.status}`,
-        );
-      }
-
-      const createdCustomer: {
-        id: string;
-        name: string;
-        phone?: string | null;
-        email?: string | null;
-        notes?: string | null;
-      } = await response.json();
-
-      const nameParts = createdCustomer.name
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
-
-      const initials =
-        nameParts
-          .slice(0, 2)
-          .map((part) =>
-            part.charAt(0).toLocaleUpperCase('tr-TR'),
-          )
-          .join('') || 'M';
-
-      setCustomers((current) => [
-        {
-          id: createdCustomer.id,
-          name: createdCustomer.name,
-          initials,
-          phone: createdCustomer.phone ?? '-',
-          email: createdCustomer.email ?? '-',
-          channel: 'Web',
-          city: '-',
-          totalOrders: 0,
-          totalSpent: 0,
-          lastContact: 'Henüz yok',
-          status: 'new',
-          tags: ['Yeni müşteri'],
-          notes:
-            createdCustomer.notes ?? 'Müşteri notu bulunmuyor.',
-          orders: [],
-        },
-        ...current,
-      ]);
-
-      setNewCustomer({
-        name: '',
-        phone: '',
-        email: '',
-        notes: '',
-      });
-
-      setIsCreateModalOpen(false);
-      showToast(`${createdCustomer.name} başarıyla kaydedildi.`);
-    } catch (error) {
-      setCreateCustomerError(
-        error instanceof Error
-          ? error.message
-          : 'Müşteri kaydedilirken hata oluştu.',
-      );
-    } finally {
-      setIsSavingCustomer(false);
-    }
   }
 
   return (
@@ -731,7 +624,10 @@ export default function CustomersClient() {
 
             <form
               className={styles.customerForm}
-              onSubmit={createCustomer}
+              onSubmit={(event) => {
+                event.preventDefault();
+                showToast('Kayıt işlemi sonraki adımda API’ye bağlanacak.');
+              }}
             >
               <label>
                 <span>Ad soyad *</span>
@@ -792,12 +688,6 @@ export default function CustomersClient() {
                 />
               </label>
 
-              {createCustomerError && (
-                <p className={styles.formError}>
-                  {createCustomerError}
-                </p>
-              )}
-
               <footer className={styles.modalActions}>
                 <button
                   type="button"
@@ -810,11 +700,8 @@ export default function CustomersClient() {
                 <button
                   type="submit"
                   className={styles.saveButton}
-                  disabled={isSavingCustomer}
                 >
-                  {isSavingCustomer
-                    ? 'Kaydediliyor...'
-                    : 'Müşteriyi kaydet'}
+                  Müşteriyi kaydet
                 </button>
               </footer>
             </form>
