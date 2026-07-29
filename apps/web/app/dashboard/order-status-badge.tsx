@@ -10,7 +10,11 @@ export default function OrderStatusBadge({ status }: Props) {
   const className = (() => {
     switch (status) {
       case "DRAFT":
+      case "PENDING":
         return styles.statusNew;
+
+      case "CONFIRMED":
+        return styles.statusCompleted;
 
       case "PREPARING":
         return styles.statusPreparing;
@@ -21,8 +25,9 @@ export default function OrderStatusBadge({ status }: Props) {
       case "DELIVERED":
         return styles.statusDelivered;
 
-      case "COMPLETED":
-        return styles.statusCompleted;
+      case "CANCELLED":
+      case "RETURNED":
+        return styles.statusShipping;
 
       default:
         return styles.statusNew;

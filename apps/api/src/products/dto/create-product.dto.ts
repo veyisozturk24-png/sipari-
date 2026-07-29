@@ -4,12 +4,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
 } from 'class-validator';
 
 export class CreateProductDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   companyId: string;
 
   @IsString()

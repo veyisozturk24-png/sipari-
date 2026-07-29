@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "./orders-table.module.css";
 
@@ -26,7 +26,7 @@ export default function OrdersTable() {
   const [drawerOpen, setDrawerOpen] =
     useState(false);
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -44,11 +44,22 @@ export default function OrdersTable() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    const timer = window.setTimeout(() => void loadOrders(), 0);
+
+    return () => window.clearTimeout(timer);
+  }, [loadOrders]);
+
+  useEffect(() => {
+    const refreshOrders = () => void loadOrders();
+
+    window.addEventListener("siparis:orders-changed", refreshOrders);
+
+    return () =>
+      window.removeEventListener("siparis:orders-changed", refreshOrders);
+  }, [loadOrders]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -218,13 +229,7 @@ export default function OrdersTable() {
                     }
                   </td>
 
-                  <td>
-                    {
-                      <td>
-  {order.customer?.name ?? "-"}
-</td>
-                    }
-                  </td>
+                  <td>{order.customer?.name ?? "-"}</td>
 
                   <td>
                     {new Intl.NumberFormat(
@@ -261,12 +266,20 @@ export default function OrdersTable() {
           </tbody>
         </table>
       )}
-            <OrderDrawer
+      <OrderDrawer
+        key={selectedOrder?.id ?? "empty"}
         open={drawerOpen}
         order={selectedOrder}
-        onClose={() => {
+        onClose={closeDrawer}
+        onUpdated={(updatedOrder) => {
+          setOrders((currentOrders) =>
+            currentOrders.map((currentOrder) =>
+              currentOrder.id === updatedOrder.id
+                ? updatedOrder
+                : currentOrder,
+            ),
+          );
           closeDrawer();
-          loadOrders();
         }}
       />
     </>

@@ -1,96 +1,12 @@
+"use client";
+
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { getSession } from '@/lib/auth';
 import styles from './dashboard.module.css';
 import OrdersTable from './orders-table';
 import NewOrderButton from './new-order-button';
-
-const stats = [
-  {
-    title: 'Bugünkü sipariş',
-    value: '24',
-    change: '+%18',
-    detail: 'Düne göre',
-    icon: '🛍️',
-  },
-  {
-    title: 'Bugünkü ciro',
-    value: '₺18.450',
-    change: '+%12',
-    detail: 'Düne göre',
-    icon: '₺',
-  },
-  {
-    title: 'Bekleyen sipariş',
-    value: '7',
-    change: '3 acil',
-    detail: 'İşlem bekliyor',
-    icon: '⏱',
-  },
-  {
-    title: 'Aktif müşteriler',
-    value: '186',
-    change: '+14',
-    detail: 'Bu ay',
-    icon: '👥',
-  },
-];
-
-const orders = [
-  {
-    id: '#SP-1048',
-    customer: 'Ayşe Yılmaz',
-    initials: 'AY',
-    channel: 'WhatsApp',
-    product: '2 ürün',
-    amount: '₺1.240',
-    status: 'Yeni',
-    statusType: 'new',
-    time: '5 dk önce',
-  },
-  {
-    id: '#SP-1047',
-    customer: 'Mehmet Kaya',
-    initials: 'MK',
-    channel: 'Instagram',
-    product: '1 ürün',
-    amount: '₺780',
-    status: 'Hazırlanıyor',
-    statusType: 'preparing',
-    time: '18 dk önce',
-  },
-  {
-    id: '#SP-1046',
-    customer: 'Selin Demir',
-    initials: 'SD',
-    channel: 'WhatsApp',
-    product: '3 ürün',
-    amount: '₺2.150',
-    status: 'Kargoda',
-    statusType: 'shipping',
-    time: '42 dk önce',
-  },
-  {
-    id: '#SP-1045',
-    customer: 'Can Öztürk',
-    initials: 'CÖ',
-    channel: 'Instagram',
-    product: '1 ürün',
-    amount: '₺560',
-    status: 'Tamamlandı',
-    statusType: 'completed',
-    time: '1 sa önce',
-  },
-  {
-    id: '#SP-1044',
-    customer: 'Zeynep Arslan',
-    initials: 'ZA',
-    channel: 'Web',
-    product: '2 ürün',
-    amount: '₺1.890',
-    status: 'Tamamlandı',
-    statusType: 'completed',
-    time: '2 sa önce',
-  },
-];
+import { fetchDashboard, type DashboardData } from './dashboard-api';
 
 const channels = [
   {
@@ -117,6 +33,53 @@ const channels = [
 ];
 
 export default function DashboardPage() {
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const user = getSession()?.user;
+
+  useEffect(() => {
+    const loadDashboard = async () => setDashboard(await fetchDashboard());
+    const timer = window.setTimeout(
+      () => void loadDashboard().catch(console.error),
+      0,
+    );
+    const refresh = () => void loadDashboard().catch(console.error);
+
+    window.addEventListener('siparis:orders-changed', refresh);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('siparis:orders-changed', refresh);
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const currency = new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      maximumFractionDigits: 0,
+    });
+    const overview = dashboard?.overview;
+
+    return [
+      { title: 'Bugünkü sipariş', value: String(overview?.todayOrders ?? 0), change: '', detail: 'Bugün', icon: '🛍️' },
+      { title: 'Bugünkü ciro', value: currency.format(overview?.todayRevenue ?? 0), change: '', detail: 'Bugün', icon: '₺' },
+      { title: 'Bekleyen sipariş', value: String(overview?.pendingOrders ?? 0), change: '', detail: 'İşlem bekliyor', icon: '⏱' },
+      { title: 'Aktif müşteriler', value: String(overview?.customers ?? 0), change: '', detail: 'Kayıtlı müşteri', icon: '👥' },
+    ];
+  }, [dashboard]);
+
+  const weeklySales = dashboard?.salesLast30Days.slice(-7) ?? [];
+  const maxRevenue = Math.max(...weeklySales.map((sale) => sale.revenue), 1);
+  const chartPoints = weeklySales.map((sale, index) => {
+    const x = weeklySales.length > 1 ? (index / (weeklySales.length - 1)) * 700 : 350;
+    const y = 220 - (sale.revenue / maxRevenue) * 190;
+
+    return { x, y, label: new Date(`${sale.date}T00:00:00`).toLocaleDateString('tr-TR', { weekday: 'short' }) };
+  });
+  const chartLine = chartPoints.map((point) => `${point.x},${point.y}`).join(' ');
+  const chartArea = chartPoints.length
+    ? `M0,230 L${chartLine.replaceAll(' ', ' L')} L700,230 Z`
+    : 'M0,230 L700,230 Z';
+
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
@@ -128,8 +91,8 @@ export default function DashboardPage() {
         <div className={styles.workspace}>
           <span className={styles.workspaceAvatar}>VM</span>
           <div>
-            <strong>Veyis Moda</strong>
-            <small>Yönetici hesabı</small>
+            <strong>{user?.companyMemberships[0]?.company.name ?? 'İşletme'}</strong>
+            <small>{user?.companyMemberships[0]?.role ?? 'Kullanıcı'} hesabı</small>
           </div>
           <span className={styles.chevron}>⌄</span>
         </div>
@@ -165,8 +128,8 @@ export default function DashboardPage() {
         <div className={styles.profile}>
           <span className={styles.profileAvatar}>VÖ</span>
           <div>
-            <strong>Veyis Öztürk</strong>
-            <small>veyis@siparis.is</small>
+            <strong>{user?.name ?? 'Kullanıcı'}</strong>
+            <small>{user?.email ?? ''}</small>
           </div>
           <span>⋮</span>
         </div>
@@ -175,7 +138,7 @@ export default function DashboardPage() {
       <main className={styles.main}>
         <header className={styles.header}>
           <div>
-            <h1>Günaydın, Veyis 👋</h1>
+            <h1>Günaydın, {user?.name?.split(' ')[0] ?? '👋'} 👋</h1>
             <p>İşletmende bugün neler olduğuna göz atalım.</p>
           </div>
 
@@ -220,9 +183,9 @@ export default function DashboardPage() {
             <div className={styles.revenueSummary}>
               <div>
                 <span>Toplam ciro</span>
-                <strong>₺82.640</strong>
+                <strong>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(dashboard?.overview.totalRevenue ?? 0)}</strong>
               </div>
-              <span className={styles.growth}>↗ %16,8</span>
+              <span className={styles.growth}>{dashboard?.overview.totalOrders ?? 0} sipariş</span>
             </div>
 
             <div className={styles.chart}>
@@ -251,24 +214,15 @@ export default function DashboardPage() {
                       <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <path
-                    className={styles.area}
-                    d="M0 190 C55 175 80 130 135 145 C195 162 220 105 275 112 C330 119 365 62 420 80 C475 98 510 38 565 55 C620 72 648 20 700 28 L700 230 L0 230 Z"
-                  />
-                  <path
-                    className={styles.line}
-                    d="M0 190 C55 175 80 130 135 145 C195 162 220 105 275 112 C330 119 365 62 420 80 C475 98 510 38 565 55 C620 72 648 20 700 28"
-                  />
-                  {[['0','190'],['135','145'],['275','112'],['420','80'],['565','55'],['700','28']].map(
-                    ([cx, cy]) => (
-                      <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="5" />
-                    ),
-                  )}
+                  <path className={styles.area} d={chartArea} />
+                  <polyline className={styles.line} points={chartLine} fill="none" />
+                  {chartPoints.map((point) => (
+                    <circle key={point.x} cx={point.x} cy={point.y} r="5" />
+                  ))}
                 </svg>
 
                 <div className={styles.xLabels}>
-                  <span>Pzt</span><span>Sal</span><span>Çar</span>
-                  <span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
+                  {chartPoints.map((point) => <span key={point.x}>{point.label}</span>)}
                 </div>
               </div>
             </div>

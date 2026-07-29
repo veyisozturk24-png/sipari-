@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { getActiveCompanyId } from '@/lib/auth';
 import type { ApiProduct } from '@/types/api-product';
 import styles from './products.module.css';
 
@@ -61,6 +62,7 @@ function formatCurrency(value: number) {
 }
 
 export default function ProductsClient() {
+  const companyId = getActiveCompanyId();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -69,39 +71,42 @@ export default function ProductsClient() {
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   useEffect(() => {
-  async function loadProducts() {
-    setIsLoading(true);
+    async function loadProducts() {
+      setIsLoading(true);
 
-    try {
-      setError('');
+      try {
+        setError('');
 
-      const data = await apiFetch<ApiProduct[]>('/products');
+        const data = await apiFetch<ApiProduct[]>(
+          `/products?companyId=${companyId}`,
+        );
 
-      setProducts(data.map(mapApiProduct));
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Ürünler yüklenemedi.',
-      );
-    } finally {
-      setIsLoading(false);
+        setProducts(data.map(mapApiProduct));
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Ürünler yüklenemedi.',
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }
 
-  void loadProducts();
-}, []);
+    void loadProducts();
+  }, [companyId]);
 
-useEffect(() => {
-  document.body.style.overflow = isModalOpen ? 'hidden' : '';
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen ? 'hidden' : '';
 
-  return () => {
-    document.body.style.overflow = '';
-  };
-}, [isModalOpen]);
-        
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen]);
+
 
   useEffect(() => {
     if (!toast) {
@@ -184,7 +189,7 @@ useEffect(() => {
 
     try {
       const updated = await apiFetch<ApiProduct>(
-  `/products/${productId}`,
+        `/products/${productId}?companyId=${companyId}`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -230,7 +235,7 @@ useEffect(() => {
 
     try {
       const updated = await apiFetch<ApiProduct>(
-  `/products/${productId}`,
+        `/products/${productId}?companyId=${companyId}`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -248,10 +253,9 @@ useEffect(() => {
       );
 
       setToast(
-        `${mappedProduct.name} ${
-          mappedProduct.status === 'active'
-            ? 'satışa açıldı'
-            : 'satışa kapatıldı'
+        `${mappedProduct.name} ${mappedProduct.status === 'active'
+          ? 'satışa açıldı'
+          : 'satışa kapatıldı'
         }.`,
       );
     } catch (requestError) {
@@ -269,7 +273,35 @@ useEffect(() => {
       [field]: value,
     }));
   }
+  async function deleteProduct(productId: string) {
+    const product = products.find((p) => p.id === productId);
 
+    if (!product) {
+      return;
+    }
+
+    if (!window.confirm(`"${product.name}" ürününü silmek istiyor musunuz?`)) {
+      return;
+    }
+
+    try {
+      await apiFetch(`/products/${productId}?companyId=${companyId}`, {
+        method: 'DELETE',
+      });
+
+      setProducts((current) =>
+        current.filter((p) => p.id !== productId),
+      );
+
+      setToast(`${product.name} silindi.`);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Ürün silinemedi.',
+      );
+    }
+  }
   async function createProduct(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -288,590 +320,648 @@ useEffect(() => {
 
     const price = Math.max(0, Number(form.price) || 0);
     const stock = Math.max(0, Number(form.stock) || 0);
+    const payload = {
+      name: form.name.trim(),
+      sku: form.sku.trim().toLocaleUpperCase('tr-TR'),
+      description: form.category
+        ? `Kategori: ${form.category}`
+        : undefined,
+      category: form.category,
+      criticalStock: Math.max(
+        0,
+        Number(form.criticalStock) || 0,
+      ),
+      emoji: form.emoji.trim() || '📦',
+      price,
+      stock,
+      companyId,
+    };
+    const updatePayload = { ...payload };
+    delete updatePayload.companyId;
 
     try {
-      const created = await apiFetch<ApiProduct>('/products', {
-        method: 'POST',
-        body: JSON.stringify({
+      if (editingProductId) {
+        const updated = await apiFetch<ApiProduct>(
+          `/products/${editingProductId}?companyId=${companyId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(updatePayload),
+          },
+        );
 
-          name: form.name.trim(),
-          sku: form.sku.trim().toLocaleUpperCase('tr-TR'),
-          description: form.category
-            ? `Kategori: ${form.category}`
-            : undefined,
-          category: form.category,
-          criticalStock: Math.max(
-            0,
-            Number(form.criticalStock) || 0,
+        const mapped = mapApiProduct(updated);
+
+        setProducts((current) =>
+          current.map((product) =>
+            product.id === editingProductId ? mapped : product,
           ),
-          emoji: form.emoji.trim() || '📦',
-          price,
-          stock,
-        }),
-      });
+        );
 
-      const newProduct = mapApiProduct(created);
+        setToast(`${mapped.name} güncellendi.`);
+      } else {
+        const created = await apiFetch<ApiProduct>('/products', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
 
-      setProducts((current) => [
-        newProduct,
-        ...current,
-      ]);
+        const newProduct = mapApiProduct(created);
 
+        setProducts((current) => [
+          newProduct,
+          ...current,
+        ]);
+
+        setToast(`${newProduct.name} ürün listesine eklendi.`);
+      }
+
+      setEditingProductId(null);
       setForm(emptyForm);
       setIsModalOpen(false);
-      setToast(`${newProduct.name} ürün listesine eklendi.`);
-    } catch (requestError) {
+    }
+    catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
           : 'Ürün kaydedilemedi.',
       );
     }
-  }
+    }
 
-  return (
-    <div className={styles.shell}>
-      <aside className={styles.sidebar}>
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoMark}>S</span>
+    return (
+      <div className={styles.shell}>
+        <aside className={styles.sidebar}>
+          <Link href="/" className={styles.logo}>
+            <span className={styles.logoMark}>S</span>
 
-          <span>
-            Sipar<span>İş</span>
-          </span>
-        </Link>
-
-        <div className={styles.workspace}>
-          <span>VM</span>
-
-          <div>
-            <strong>Veyis Moda</strong>
-            <small>Yönetici hesabı</small>
-          </div>
-        </div>
-
-        <nav className={styles.nav}>
-          <p>MENÜ</p>
-
-          <Link href="/dashboard">
-            <span>▦</span>
-            Genel Bakış
+            <span>
+              Sipar<span>İş</span>
+            </span>
           </Link>
 
-          <Link href="/dashboard/inbox">
-            <span>💬</span>
-            Gelen Kutusu
-            <b>3</b>
-          </Link>
-
-          <Link href="/dashboard">
-            <span>▣</span>
-            Siparişler
-          </Link>
-
-          <Link
-            href="/dashboard/products"
-            className={styles.active}
-          >
-            <span>◇</span>
-            Ürünler
-          </Link>
-
-          <Link href="/dashboard/customers">
-            <span>◉</span>
-            Müşteriler
-          </Link>
-
-          <Link
-            href="/dashboard/products"
-            className={styles.stockLink}
-          >
-            <span>▤</span>
-            Stok Yönetimi
-          </Link>
-
-          <Link href="/dashboard/shipping">
-            <span>🚚</span>
-            Kargo Merkezi
-          </Link>
-
-          <p>YÖNETİM</p>
-
-          <a href="#">
-            <span>⌁</span>
-            Kanallar
-          </a>
-
-          <a href="#">
-            <span>⚙</span>
-            Ayarlar
-          </a>
-        </nav>
-
-        <div className={styles.profile}>
-          <span>VÖ</span>
-
-          <div>
-            <strong>Veyis Öztürk</strong>
-            <small>veyis@siparis.is</small>
-          </div>
-        </div>
-      </aside>
-
-      <main className={styles.main}>
-        <header className={styles.pageHeader}>
-          <div>
-            <span>ÜRÜN YÖNETİMİ</span>
-            <h1>Ürünler ve Stok</h1>
-            <p>
-              Ürünlerini, fiyatlarını ve stok seviyelerini tek
-              ekrandan yönet.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className={styles.addButton}
-            onClick={() => setIsModalOpen(true)}
-          >
-            <span>＋</span>
-            Yeni ürün
-          </button>
-        </header>
-
-        <section className={styles.statGrid}>
-          <article>
-            <div className={styles.statIcon}>◇</div>
+          <div className={styles.workspace}>
+            <span>VM</span>
 
             <div>
-              <span>Toplam ürün</span>
-              <strong>{statistics.totalProducts}</strong>
-              <small>Ürün kataloğu</small>
-            </div>
-          </article>
-
-          <article>
-            <div className={styles.statIcon}>▤</div>
-
-            <div>
-              <span>Toplam stok</span>
-              <strong>{statistics.totalStock}</strong>
-              <small>Satılabilir adet</small>
-            </div>
-          </article>
-
-          <article>
-            <div className={`${styles.statIcon} ${styles.warning}`}>
-              !
-            </div>
-
-            <div>
-              <span>Kritik stok</span>
-              <strong>{statistics.critical}</strong>
-              <small>Takip gerektiriyor</small>
-            </div>
-          </article>
-
-          <article>
-            <div className={`${styles.statIcon} ${styles.danger}`}>
-              ×
-            </div>
-
-            <div>
-              <span>Tükenen ürün</span>
-              <strong>{statistics.outOfStock}</strong>
-              <small>Satışa kapalı</small>
-            </div>
-          </article>
-
-          <article>
-            <div className={`${styles.statIcon} ${styles.value}`}>
-              ₺
-            </div>
-
-            <div>
-              <span>Stok değeri</span>
-              <strong>
-                {formatCurrency(statistics.stockValue)}
-              </strong>
-              <small>Tahmini satış değeri</small>
-            </div>
-          </article>
-        </section>
-
-        <section className={styles.productCard}>
-          <div className={styles.toolbar}>
-            <div className={styles.search}>
-              <span>⌕</span>
-
-              <input
-                value={search}
-                onChange={(event) =>
-                  setSearch(event.target.value)
-                }
-                placeholder="Ürün, kategori veya stok kodu ara..."
-              />
-            </div>
-
-            <div className={styles.filters}>
-              <button
-                type="button"
-                className={
-                  filter === 'all' ? styles.activeFilter : ''
-                }
-                onClick={() => setFilter('all')}
-              >
-                Tümü
-              </button>
-
-              <button
-                type="button"
-                className={
-                  filter === 'critical'
-                    ? styles.activeFilter
-                    : ''
-                }
-                onClick={() => setFilter('critical')}
-              >
-                Kritik stok
-              </button>
-
-              <button
-                type="button"
-                className={
-                  filter === 'out' ? styles.activeFilter : ''
-                }
-                onClick={() => setFilter('out')}
-              >
-                Tükenenler
-              </button>
+              <strong>Veyis Moda</strong>
+              <small>Yönetici hesabı</small>
             </div>
           </div>
 
-          <div className={styles.tableWrap}>
-            <table>
-              <thead>
-                <tr>
-                  <th>ÜRÜN</th>
-                  <th>KATEGORİ</th>
-                  <th>FİYAT</th>
-                  <th>STOK</th>
-                  <th>DURUM</th>
-                  <th>STOK İŞLEMİ</th>
-                  <th />
-                </tr>
-              </thead>
+          <nav className={styles.nav}>
+            <p>MENÜ</p>
 
-              <tbody>
-                {filteredProducts.map((product) => {
-                  const isCritical =
-                    product.stock > 0 &&
-                    product.stock <= product.criticalStock;
+            <Link href="/dashboard">
+              <span>▦</span>
+              Genel Bakış
+            </Link>
 
-                  return (
-                    <tr key={product.id}>
-                      <td>
-                        <div className={styles.productInfo}>
-                          <span>{product.emoji}</span>
+            <Link href="/dashboard/inbox">
+              <span>💬</span>
+              Gelen Kutusu
+              <b>3</b>
+            </Link>
 
-                          <div>
-                            <strong>{product.name}</strong>
-                            <small>{product.sku}</small>
-                          </div>
-                        </div>
-                      </td>
+            <Link href="/dashboard">
+              <span>▣</span>
+              Siparişler
+            </Link>
 
-                      <td>
-                        <span className={styles.category}>
-                          {product.category}
-                        </span>
-                      </td>
-
-                      <td>
-                        <strong>
-                          {formatCurrency(product.price)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <div className={styles.stockCell}>
-                          <strong
-                            className={
-                              product.stock === 0
-                                ? styles.stockOut
-                                : isCritical
-                                  ? styles.stockCritical
-                                  : ''
-                            }
-                          >
-                            {product.stock}
-                          </strong>
-
-                          <small>
-                            Kritik: {product.criticalStock}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span
-                          className={
-                            product.status === 'active'
-                              ? styles.activeStatus
-                              : styles.passiveStatus
-                          }
-                        >
-                          <i />
-                          {product.status === 'active'
-                            ? 'Satışta'
-                            : 'Pasif'}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className={styles.stockActions}>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateStock(product.id, -1)
-                            }
-                            disabled={product.stock === 0}
-                            aria-label="Stok azalt"
-                          >
-                            −
-                          </button>
-
-                          <span>{product.stock}</span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateStock(product.id, 1)
-                            }
-                            aria-label="Stok artır"
-                          >
-                            ＋
-                          </button>
-                        </div>
-                      </td>
-
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.moreButton}
-                          onClick={() =>
-                            toggleStatus(product.id)
-                          }
-                          title={
-                            product.status === 'active'
-                              ? 'Satışa kapat'
-                              : 'Satışa aç'
-                          }
-                        >
-                          ⋯
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {filteredProducts.length === 0 && (
-              <div className={styles.emptyState}>
-                <span>📦</span>
-                <strong>Ürün bulunamadı</strong>
-                <p>
-                  Arama veya filtre seçimini değiştirerek tekrar
-                  dene.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
-
-      {isModalOpen && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setIsModalOpen(false)}
-        >
-          <section
-            className={styles.productModal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="new-product-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className={styles.modalHeader}>
-              <div>
-                <span>YENİ KAYIT</span>
-                <h2 id="new-product-title">Yeni ürün ekle</h2>
-                <p>
-                  Ürün bilgilerini ve başlangıç stok seviyesini
-                  gir.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                aria-label="Formu kapat"
-              >
-                ×
-              </button>
-            </header>
-
-            <form
-              className={styles.productForm}
-              onSubmit={createProduct}
+            <Link
+              href="/dashboard/products"
+              className={styles.active}
             >
-              <div className={styles.formGrid}>
-                <label className={styles.fullField}>
-                  <span>Ürün adı *</span>
+              <span>◇</span>
+              Ürünler
+            </Link>
 
-                  <input
-                    autoFocus
-                    value={form.name}
-                    onChange={(event) =>
-                      updateField('name', event.target.value)
-                    }
-                    placeholder="Örn. Oversize siyah sweatshirt"
-                  />
-                </label>
+            <Link href="/dashboard/customers">
+              <span>◉</span>
+              Müşteriler
+            </Link>
 
-                <label>
-                  <span>Stok kodu *</span>
+            <Link
+              href="/dashboard/products"
+              className={styles.stockLink}
+            >
+              <span>▤</span>
+              Stok Yönetimi
+            </Link>
 
-                  <input
-                    value={form.sku}
-                    onChange={(event) =>
-                      updateField('sku', event.target.value)
-                    }
-                    placeholder="SWT-SYH-001"
-                  />
-                </label>
+            <Link href="/dashboard/shipping">
+              <span>🚚</span>
+              Kargo Merkezi
+            </Link>
 
-                <label>
-                  <span>Kategori</span>
+            <p>YÖNETİM</p>
 
-                  <select
-                    value={form.category}
-                    onChange={(event) =>
-                      updateField('category', event.target.value)
-                    }
-                  >
-                    <option>Tişört</option>
-                    <option>Sweatshirt</option>
-                    <option>Pantolon</option>
-                    <option>Dış Giyim</option>
-                    <option>Aksesuar</option>
-                    <option>Ayakkabı</option>
-                    <option>Diğer</option>
-                  </select>
-                </label>
+            <a href="#">
+              <span>⌁</span>
+              Kanallar
+            </a>
 
-                <label>
-                  <span>Satış fiyatı *</span>
+            <a href="#">
+              <span>⚙</span>
+              Ayarlar
+            </a>
+          </nav>
 
-                  <div className={styles.moneyInput}>
-                    <b>₺</b>
+          <div className={styles.profile}>
+            <span>VÖ</span>
 
-                    <input
-                      inputMode="numeric"
-                      value={form.price}
-                      onChange={(event) =>
-                        updateField('price', event.target.value)
-                      }
-                      placeholder="1250"
-                    />
-                  </div>
-                </label>
+            <div>
+              <strong>Veyis Öztürk</strong>
+              <small>veyis@siparis.is</small>
+            </div>
+          </div>
+        </aside>
 
-                <label>
-                  <span>Başlangıç stoğu</span>
+        <main className={styles.main}>
+          <header className={styles.pageHeader}>
+            <div>
+              <span>ÜRÜN YÖNETİMİ</span>
+              <h1>Ürünler ve Stok</h1>
+              <p>
+                Ürünlerini, fiyatlarını ve stok seviyelerini tek
+                ekrandan yönet.
+              </p>
+            </div>
 
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.stock}
-                    onChange={(event) =>
-                      updateField('stock', event.target.value)
-                    }
-                    placeholder="10"
-                  />
-                </label>
+            <button
+              type="button"
+              className={styles.addButton}
+              onClick={() => setIsModalOpen(true)}
+            >
+              <span>＋</span>
+              Yeni ürün
+            </button>
+          </header>
 
-                <label>
-                  <span>Kritik stok seviyesi</span>
+          <section className={styles.statGrid}>
+            <article>
+              <div className={styles.statIcon}>◇</div>
 
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.criticalStock}
-                    onChange={(event) =>
-                      updateField(
-                        'criticalStock',
-                        event.target.value,
-                      )
-                    }
-                  />
-                </label>
+              <div>
+                <span>Toplam ürün</span>
+                <strong>{statistics.totalProducts}</strong>
+                <small>Ürün kataloğu</small>
+              </div>
+            </article>
 
-                <label>
-                  <span>Ürün simgesi</span>
+            <article>
+              <div className={styles.statIcon}>▤</div>
 
-                  <select
-                    value={form.emoji}
-                    onChange={(event) =>
-                      updateField('emoji', event.target.value)
-                    }
-                  >
-                    <option>📦</option>
-                    <option>👕</option>
-                    <option>👖</option>
-                    <option>🧥</option>
-                    <option>👗</option>
-                    <option>👜</option>
-                    <option>👟</option>
-                  </select>
-                </label>
+              <div>
+                <span>Toplam stok</span>
+                <strong>{statistics.totalStock}</strong>
+                <small>Satılabilir adet</small>
+              </div>
+            </article>
+
+            <article>
+              <div className={`${styles.statIcon} ${styles.warning}`}>
+                !
               </div>
 
-              {error && (
-                <div className={styles.formError}>
-                  <span>!</span>
-                  {error}
-                </div>
-              )}
+              <div>
+                <span>Kritik stok</span>
+                <strong>{statistics.critical}</strong>
+                <small>Takip gerektiriyor</small>
+              </div>
+            </article>
 
-              <footer className={styles.modalActions}>
+            <article>
+              <div className={`${styles.statIcon} ${styles.danger}`}>
+                ×
+              </div>
+
+              <div>
+                <span>Tükenen ürün</span>
+                <strong>{statistics.outOfStock}</strong>
+                <small>Satışa kapalı</small>
+              </div>
+            </article>
+
+            <article>
+              <div className={`${styles.statIcon} ${styles.value}`}>
+                ₺
+              </div>
+
+              <div>
+                <span>Stok değeri</span>
+                <strong>
+                  {formatCurrency(statistics.stockValue)}
+                </strong>
+                <small>Tahmini satış değeri</small>
+              </div>
+            </article>
+          </section>
+
+          <section className={styles.productCard}>
+            <div className={styles.toolbar}>
+              <div className={styles.search}>
+                <span>⌕</span>
+
+                <input
+                  value={search}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
+                  placeholder="Ürün, kategori veya stok kodu ara..."
+                />
+              </div>
+
+              <div className={styles.filters}>
                 <button
                   type="button"
-                  className={styles.cancelButton}
-                  onClick={() => setIsModalOpen(false)}
+                  className={
+                    filter === 'all' ? styles.activeFilter : ''
+                  }
+                  onClick={() => setFilter('all')}
                 >
-                  Vazgeç
+                  Tümü
                 </button>
 
                 <button
-                  type="submit"
-                  className={styles.saveButton}
+                  type="button"
+                  className={
+                    filter === 'critical'
+                      ? styles.activeFilter
+                      : ''
+                  }
+                  onClick={() => setFilter('critical')}
                 >
-                  <span>＋</span>
-                  Ürünü kaydet
+                  Kritik stok
                 </button>
-              </footer>
-            </form>
-          </section>
-        </div>
-      )}
 
-      {toast && (
-        <div className={styles.toast} role="status">
-          <span>✓</span>
-          {toast}
-        </div>
-      )}
-    </div>
-  );
-}
+                <button
+                  type="button"
+                  className={
+                    filter === 'out' ? styles.activeFilter : ''
+                  }
+                  onClick={() => setFilter('out')}
+                >
+                  Tükenenler
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.tableWrap}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ÜRÜN</th>
+                    <th>KATEGORİ</th>
+                    <th>FİYAT</th>
+                    <th>STOK</th>
+                    <th>DURUM</th>
+                    <th>STOK İŞLEMİ</th>
+                    <th />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredProducts.map((product) => {
+                    const isCritical =
+                      product.stock > 0 &&
+                      product.stock <= product.criticalStock;
+
+                    return (
+                      <tr key={product.id}>
+                        <td>
+                          <div className={styles.productInfo}>
+                            <span>{product.emoji}</span>
+
+                            <div>
+                              <strong>{product.name}</strong>
+                              <small>{product.sku}</small>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className={styles.category}>
+                            {product.category}
+                          </span>
+                        </td>
+
+                        <td>
+                          <strong>
+                            {formatCurrency(product.price)}
+                          </strong>
+                        </td>
+
+                        <td>
+                          <div className={styles.stockCell}>
+                            <strong
+                              className={
+                                product.stock === 0
+                                  ? styles.stockOut
+                                  : isCritical
+                                    ? styles.stockCritical
+                                    : ''
+                              }
+                            >
+                              {product.stock}
+                            </strong>
+
+                            <small>
+                              Kritik: {product.criticalStock}
+                            </small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span
+                            className={
+                              product.status === 'active'
+                                ? styles.activeStatus
+                                : styles.passiveStatus
+                            }
+                          >
+                            <i />
+                            {product.status === 'active'
+                              ? 'Satışta'
+                              : 'Pasif'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className={styles.stockActions}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateStock(product.id, -1)
+                              }
+                              disabled={product.stock === 0}
+                              aria-label="Stok azalt"
+                            >
+                              −
+                            </button>
+
+                            <span>{product.stock}</span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateStock(product.id, 1)
+                              }
+                              aria-label="Stok artır"
+                            >
+                              ＋
+                            </button>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className={styles.rowActions}>
+                            <button
+                              type="button"
+                              className={styles.editButton}
+                              onClick={() => {
+                                setEditingProductId(product.id);
+
+                                setForm({
+                                  name: product.name,
+                                  sku: product.sku,
+                                  category: product.category,
+                                  price: product.price.toString(),
+                                  stock: product.stock.toString(),
+                                  criticalStock: product.criticalStock.toString(),
+                                  emoji: product.emoji,
+                                });
+
+                                setIsModalOpen(true);
+                              }}
+                            >
+                              ✏️
+                            </button>
+
+                            <button
+                              type="button"
+                              className={styles.deleteButton}
+                              onClick={() => deleteProduct(product.id)}
+                            >
+                              🗑️
+                            </button>
+
+                            <button
+                              type="button"
+                              className={styles.moreButton}
+                              onClick={() => toggleStatus(product.id)}
+                              title={
+                                product.status === 'active'
+                                  ? 'Satışa kapat'
+                                  : 'Satışa aç'
+                              }
+                            >
+                              ⋯
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {filteredProducts.length === 0 && (
+                <div className={styles.emptyState}>
+                  <span>📦</span>
+                  <strong>Ürün bulunamadı</strong>
+                  <p>
+                    Arama veya filtre seçimini değiştirerek tekrar
+                    dene.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </main>
+
+        {isModalOpen && (
+          <div
+            className={styles.modalBackdrop}
+            onClick={() => setIsModalOpen(false)}
+          >
+            <section
+              className={styles.productModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="new-product-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <header className={styles.modalHeader}>
+                <div>
+                  <span>YENİ KAYIT</span>
+                  <h2 id="new-product-title">
+                    {editingProductId ? 'Ürünü düzenle' : 'Yeni ürün ekle'}
+                  </h2>
+                  <p>
+                    Ürün bilgilerini ve başlangıç stok seviyesini
+                    gir.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  aria-label="Formu kapat"
+                >
+                  ×
+                </button>
+              </header>
+
+              <form
+                className={styles.productForm}
+                onSubmit={createProduct}
+              >
+                <div className={styles.formGrid}>
+                  <label className={styles.fullField}>
+                    <span>Ürün adı *</span>
+
+                    <input
+                      autoFocus
+                      value={form.name}
+                      onChange={(event) =>
+                        updateField('name', event.target.value)
+                      }
+                      placeholder="Örn. Oversize siyah sweatshirt"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Stok kodu *</span>
+
+                    <input
+                      value={form.sku}
+                      onChange={(event) =>
+                        updateField('sku', event.target.value)
+                      }
+                      placeholder="SWT-SYH-001"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Kategori</span>
+
+                    <select
+                      value={form.category}
+                      onChange={(event) =>
+                        updateField('category', event.target.value)
+                      }
+                    >
+                      <option>Tişört</option>
+                      <option>Sweatshirt</option>
+                      <option>Pantolon</option>
+                      <option>Dış Giyim</option>
+                      <option>Aksesuar</option>
+                      <option>Ayakkabı</option>
+                      <option>Diğer</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Satış fiyatı *</span>
+
+                    <div className={styles.moneyInput}>
+                      <b>₺</b>
+
+                      <input
+                        inputMode="numeric"
+                        value={form.price}
+                        onChange={(event) =>
+                          updateField('price', event.target.value)
+                        }
+                        placeholder="1250"
+                      />
+                    </div>
+                  </label>
+
+                  <label>
+                    <span>Başlangıç stoğu</span>
+
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.stock}
+                      onChange={(event) =>
+                        updateField('stock', event.target.value)
+                      }
+                      placeholder="10"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Kritik stok seviyesi</span>
+
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.criticalStock}
+                      onChange={(event) =>
+                        updateField(
+                          'criticalStock',
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </label>
+
+                  <label>
+                    <span>Ürün simgesi</span>
+
+                    <select
+                      value={form.emoji}
+                      onChange={(event) =>
+                        updateField('emoji', event.target.value)
+                      }
+                    >
+                      <option>📦</option>
+                      <option>👕</option>
+                      <option>👖</option>
+                      <option>🧥</option>
+                      <option>👗</option>
+                      <option>👜</option>
+                      <option>👟</option>
+                    </select>
+                  </label>
+                </div>
+
+                {error && (
+                  <div className={styles.formError}>
+                    <span>!</span>
+                    {error}
+                  </div>
+                )}
+
+                <footer className={styles.modalActions}>
+                  <button
+                    type="button"
+                    className={styles.cancelButton}
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Vazgeç
+                  </button>
+
+                  <button
+                    type="submit"
+                    className={styles.saveButton}
+                  >
+                    <span>＋</span>
+                    {editingProductId ? 'Değişiklikleri kaydet' : 'Ürünü kaydet'}
+                  </button>
+                </footer>
+              </form>
+            </section>
+          </div>
+        )}
+
+        {toast && (
+          <div className={styles.toast} role="status">
+            <span>✓</span>
+            {toast}
+          </div>
+        )}
+      </div>
+    );
+  }

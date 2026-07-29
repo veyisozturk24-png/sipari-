@@ -9,8 +9,8 @@ import {
 
 import styles from './dashboard.module.css';
 import { createOrder as createOrderApi } from './order-api';
+import { getActiveCompanyId, getSession } from '@/lib/auth';
 
-const COMPANY_ID = 'e630b46e-358f-4d9b-9f8e-62c40829b580';
 const API_URL = 'http://localhost:3001';
 
 type Customer = {
@@ -26,33 +26,6 @@ type Product = {
   sku: string;
   price: string | number;
   stock: number;
-};
-
-type ApiOrderItem = {
-  id: string;
-  productId: string | null;
-  productName: string;
-  sku: string | null;
-  quantity: number;
-  unitPrice: string | number;
-  totalPrice: string | number;
-};
-
-type ApiOrder = {
-  id: string;
-  orderNumber: string;
-  status: string;
-  totalAmount: string | number;
-  customerNote: string | null;
-  internalNote: string | null;
-  shippingName: string | null;
-  shippingPhone: string | null;
-  shippingCity: string | null;
-  shippingDistrict: string | null;
-  shippingAddress: string | null;
-  createdAt: string;
-  customer: Customer | null;
-  items: ApiOrderItem[];
 };
 
 type NewOrderForm = {
@@ -78,17 +51,6 @@ const emptyForm: NewOrderForm = {
   shippingAddress: '',
   customerNote: '',
 };
-
-function createInitials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) =>
-      part.charAt(0).toLocaleUpperCase('tr-TR'),
-    )
-    .join('');
-}
 
 function formatCurrency(value: string | number) {
   return new Intl.NumberFormat('tr-TR', {
@@ -122,6 +84,7 @@ function getErrorMessage(
 }
 
 export default function NewOrderButton() {
+  const companyId = getActiveCompanyId();
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] =
     useState<NewOrderForm>(emptyForm);
@@ -183,7 +146,7 @@ export default function NewOrderButton() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [companyId, isOpen]);
 
   useEffect(() => {
     function closeWithEscape(event: KeyboardEvent) {
@@ -217,15 +180,17 @@ export default function NewOrderButton() {
         const [customersResponse, productsResponse] =
           await Promise.all([
             fetch(
-              `${API_URL}/customers?companyId=${COMPANY_ID}`,
+              `${API_URL}/customers?companyId=${companyId}`,
               {
                 cache: 'no-store',
+                headers: { Authorization: `Bearer ${getSession()?.accessToken ?? ''}` },
               },
             ),
             fetch(
-              `${API_URL}/products?companyId=${COMPANY_ID}`,
+              `${API_URL}/products?companyId=${companyId}`,
               {
                 cache: 'no-store',
+                headers: { Authorization: `Bearer ${getSession()?.accessToken ?? ''}` },
               },
             ),
           ]);
@@ -288,7 +253,7 @@ export default function NewOrderButton() {
     return () => {
       isActive = false;
     };
-  }, [isOpen]);
+  }, [companyId, isOpen]);
 
   function updateField(
     field: keyof NewOrderForm,
@@ -342,7 +307,7 @@ export default function NewOrderButton() {
     setIsSubmitting(true);
 
     try {
-      const createdOrder = await createOrderApi({
+      await createOrderApi({
   customerId: selectedCustomer.id,
   items: [
     {
@@ -364,58 +329,7 @@ export default function NewOrderButton() {
   shippingAddress:
     form.shippingAddress.trim() || undefined,
 });
-      const productCount = createdOrder.items.reduce(
-        (total, item) => total + item.quantity,
-        0,
-      );
-
-      const address = [
-        createdOrder.shippingDistrict,
-        createdOrder.shippingCity,
-        createdOrder.shippingAddress,
-      ]
-        .filter(Boolean)
-        .join(', ');
-
-      window.dispatchEvent(
-        new CustomEvent('siparis:new-order', {
-          detail: {
-            id: createdOrder.orderNumber,
-            customer:
-              createdOrder.customer?.name ||
-              createdOrder.shippingName ||
-              selectedCustomer.name,
-            phone:
-              createdOrder.customer?.phone ||
-              createdOrder.shippingPhone ||
-              'Telefon bilgisi yok',
-            initials:
-              createInitials(
-                createdOrder.customer?.name ||
-                  createdOrder.shippingName ||
-                  selectedCustomer.name,
-              ) || 'M',
-            channel: 'Panel',
-            product: `${productCount} ürün`,
-            products: createdOrder.items.map(
-              (item) =>
-                `${item.productName} × ${item.quantity}`,
-            ),
-            amount: formatCurrency(
-              createdOrder.totalAmount,
-            ),
-            status: 'Yeni',
-            statusType: 'new',
-            address:
-              address || 'Adres henüz eklenmedi',
-            note:
-              createdOrder.customerNote ||
-              createdOrder.internalNote ||
-              'Sipariş notu bulunmuyor.',
-            time: 'Şimdi',
-          },
-        }),
-      );
+      window.dispatchEvent(new Event('siparis:orders-changed'));
 
       setProducts((currentProducts) =>
         currentProducts.map((product) =>

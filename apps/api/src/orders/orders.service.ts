@@ -236,29 +236,102 @@ export class OrdersService {
   }
 
   async remove(id: string, companyId: string) {
-    await this.findOne(id, companyId);
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id, companyId },
+        include: { items: true },
+      });
 
-    return this.prisma.order.delete({
-      where: {
-        id,
-      },
+      if (!order) {
+        throw new NotFoundException('Sipariş bulunamadı.');
+      }
+
+      if (!this.hasStockBeenReturned(order.status)) {
+        await this.restoreStock(tx, companyId, order.items);
+      }
+
+      return tx.order.delete({ where: { id } });
     });
   }
 
-async updateStatus(
-  id: string,
-  companyId: string,
-  status: OrderStatus,
-) {
-  await this.findOne(id, companyId);
+  async updateStatus(
+    id: string,
+    companyId: string,
+    status: OrderStatus,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id, companyId },
+        include: { items: true },
+      });
 
-  return this.prisma.order.update({
-    where: {
-      id,
-    },
-    data: {
-      status,
-    },
-  });
-}
+      if (!order) {
+        throw new NotFoundException('Sipariş bulunamadı.');
+      }
+
+      if (order.status === status) {
+        return this.findOne(id, companyId);
+      }
+
+      if (!this.canTransition(order.status, status)) {
+        throw new BadRequestException(
+          `Sipariş durumu ${order.status} durumundan ${status} durumuna geçirilemez.`,
+        );
+      }
+
+      if (this.hasStockBeenReturned(status)) {
+        await this.restoreStock(tx, companyId, order.items);
+      }
+
+      return tx.order.update({
+        where: { id },
+        data: { status },
+        include: {
+          customer: {
+            select: { id: true, name: true, phone: true, email: true },
+          },
+          items: { orderBy: { createdAt: 'asc' } },
+          shipment: true,
+        },
+      });
+    });
+  }
+
+  private hasStockBeenReturned(status: OrderStatus) {
+    return status === OrderStatus.CANCELLED || status === OrderStatus.RETURNED;
+  }
+
+  private canTransition(from: OrderStatus, to: OrderStatus) {
+    const transitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.DRAFT]: [OrderStatus.PENDING, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+      [OrderStatus.PREPARING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.RETURNED],
+      [OrderStatus.DELIVERED]: [OrderStatus.RETURNED],
+    };
+
+    return transitions[from]?.includes(to) ?? false;
+  }
+
+  private async restoreStock(
+    tx: Parameters<PrismaService['$transaction']>[0] extends (
+      arg: infer Transaction,
+    ) => unknown
+      ? Transaction
+      : never,
+    companyId: string,
+    items: { productId: string | null; quantity: number }[],
+  ) {
+    await Promise.all(
+      items
+        .filter((item) => item.productId)
+        .map((item) =>
+          tx.product.updateMany({
+            where: { id: item.productId!, companyId },
+            data: { stock: { increment: item.quantity } },
+          }),
+        ),
+    );
+  }
 }

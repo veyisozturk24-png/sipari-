@@ -8,26 +8,25 @@ import OrderStatusBadge from "./order-status-badge";
 import { updateOrderStatus } from "./order-api";
 
 import type { ApiOrder, OrderStatus } from "./order-types";
+import { getNextOrderStatuses, getStatusLabel } from "./order-utils";
 
 type Props = {
   open: boolean;
   order: ApiOrder | null;
   onClose: () => void;
+  onUpdated: (order: ApiOrder) => void;
 };
 
 export default function OrderDrawer({
   open,
   order,
   onClose,
+  onUpdated,
 }: Props) {
-  const [status, setStatus] = useState<OrderStatus>("DRAFT");
+  const [status, setStatus] = useState<OrderStatus>(
+    order?.status ?? "DRAFT",
+  );
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (order) {
-      setStatus(order.status);
-    }
-  }, [order]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -51,14 +50,11 @@ export default function OrderDrawer({
     try {
       setSaving(true);
 
-      await updateOrderStatus(
+      const updatedOrder = await updateOrderStatus(
         order.id,
         status,
       );
-
-      alert("Sipariş güncellendi.");
-
-      onClose();
+      onUpdated(updatedOrder);
     } catch (err) {
       console.error(err);
 
@@ -104,7 +100,7 @@ export default function OrderDrawer({
 
           <div className={styles.customerCard}>
             <div className={styles.avatar}>
-              {order.customer.name
+              {(order.customer?.name ?? order.shippingName ?? "Müşteri")
                 .split(" ")
                 .map((x) => x[0])
                 .join("")
@@ -112,9 +108,9 @@ export default function OrderDrawer({
             </div>
 
             <div>
-              <strong>{order.customer.name}</strong>
+              <strong>{order.customer?.name ?? order.shippingName ?? "-"}</strong>
 
-              <p>{order.customer.phone}</p>
+              <p>{order.customer?.phone ?? order.shippingPhone ?? "Telefon bilgisi yok"}</p>
             </div>
           </div>
         </section>
@@ -133,25 +129,11 @@ export default function OrderDrawer({
               )
             }
           >
-            <option value="DRAFT">
-              Taslak
-            </option>
-
-            <option value="PREPARING">
-              Hazırlanıyor
-            </option>
-
-            <option value="SHIPPED">
-              Kargoda
-            </option>
-
-            <option value="DELIVERED">
-              Teslim Edildi
-            </option>
-
-            <option value="COMPLETED">
-              Tamamlandı
-            </option>
+            {getNextOrderStatuses(order.status).map((orderStatus) => (
+              <option key={orderStatus} value={orderStatus}>
+                {getStatusLabel(orderStatus)}
+              </option>
+            ))}
           </select>
         </section>
 
@@ -226,7 +208,7 @@ export default function OrderDrawer({
                 <span>Firma</span>
 
                 <strong>
-                  {order.shipment.company ?? "-"}
+                  {order.shipment.carrier}
                 </strong>
               </div>
 

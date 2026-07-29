@@ -9,33 +9,26 @@ import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+  private readonly prisma: PrismaService,
+) {}
 
   async create(dto: CreateProductDto) {
-    const existingProduct = await this.prisma.product.findUnique({
-      where: {
-        companyId_sku: {
-          companyId: dto.companyId,
-          sku: dto.sku,
-        },
-      },
-    });
+  return this.prisma.product.create({
+    data: {
+      companyId: dto.companyId,
+      name: dto.name,
+      sku: dto.sku,
+      description: dto.description,
+      category: dto.category ?? "Genel",
+      criticalStock: dto.criticalStock ?? 5,
+      emoji: dto.emoji ?? "📦",
+      price: dto.price,
+      stock: dto.stock ?? 0,
+    },
+  });
+}
 
-    if (existingProduct) {
-      throw new ConflictException('Bu SKU ile kayıtlı bir ürün zaten var.');
-    }
-
-    return this.prisma.product.create({
-      data: {
-        companyId: dto.companyId,
-        name: dto.name,
-        sku: dto.sku,
-        description: dto.description,
-        price: dto.price,
-        stock: dto.stock ?? 0,
-      },
-    });
-  }
 
   async findAll(companyId: string) {
     return this.prisma.product.findMany({
@@ -95,6 +88,7 @@ export class ProductsService {
         emoji: dto.emoji,
         price: dto.price,
         stock: dto.stock,
+        status: dto.status,
       },
     });
   }

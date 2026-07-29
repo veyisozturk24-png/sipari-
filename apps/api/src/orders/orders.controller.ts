@@ -8,11 +8,15 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { CompanyAccessGuard } from '../auth/company-access.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 @Controller('orders')
+@UseGuards(JwtAuthGuard, CompanyAccessGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 

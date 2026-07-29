@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { getActiveCompanyId, getSession } from '@/lib/auth';
 import styles from './customers.module.css';
 
 type Channel = 'WhatsApp' | 'Instagram' | 'Facebook' | 'Web';
@@ -210,14 +211,17 @@ export default function CustomersClient() {
   });
 
   useEffect(() => {
-    const companyId = process.env.NEXT_PUBLIC_COMPANY_ID;
+    const companyId = getActiveCompanyId();
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
     if (!companyId) {
-      setLoadError('NEXT_PUBLIC_COMPANY_ID tanımlı değil.');
-      setIsLoading(false);
-      return;
+      const timer = window.setTimeout(() => {
+        setLoadError('İşletme bilgisi bulunamadı.');
+        setIsLoading(false);
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
 
     const resolvedCompanyId = companyId;
@@ -229,6 +233,11 @@ export default function CustomersClient() {
 
         const response = await fetch(
           `${apiUrl}/customers?companyId=${encodeURIComponent(resolvedCompanyId)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getSession()?.accessToken ?? ''}`,
+            },
+          },
         );
 
         if (!response.ok) {
@@ -342,7 +351,7 @@ export default function CustomersClient() {
   ) {
     event.preventDefault();
 
-    const companyId = process.env.NEXT_PUBLIC_COMPANY_ID;
+    const companyId = getActiveCompanyId();
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -361,6 +370,7 @@ export default function CustomersClient() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${getSession()?.accessToken ?? ''}`,
         },
         body: JSON.stringify({
           companyId,

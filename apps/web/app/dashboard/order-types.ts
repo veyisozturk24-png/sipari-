@@ -1,10 +1,12 @@
 export const ORDER_STATUSES = [
   "DRAFT",
+  "PENDING",
+  "CONFIRMED",
   "PREPARING",
   "SHIPPED",
   "DELIVERED",
-  "COMPLETED",
   "CANCELLED",
+  "RETURNED",
 ] as const;
 
 export type OrderStatus =
@@ -20,7 +22,7 @@ export interface CustomerSummary {
 export interface OrderItem {
   id: string;
 
-  productId: string;
+  productId: string | null;
   productName: string;
   sku: string | null;
 
@@ -33,10 +35,8 @@ export interface OrderItem {
 export interface Shipment {
   id: string;
 
-  carrier: string | null;
+  carrier: string;
   trackingNumber: string | null;
-  trackingUrl: string | null;
-
   status: string;
 
   createdAt: string;

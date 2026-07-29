@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { getActiveCompanyId } from "@/lib/auth";
 
 import type {
   ApiOrder,
@@ -6,17 +7,19 @@ import type {
   OrderStatus,
 } from "./order-types";
 
-const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID!;
-
 export function fetchOrders(): Promise<ApiOrder[]> {
+  const companyId = getActiveCompanyId();
+
   return apiFetch<ApiOrder[]>(
-    `/orders?companyId=${COMPANY_ID}`,
+    `/orders?companyId=${companyId}`,
   );
 }
 
 export function createOrder(
   payload: CreateOrderDto,
 ): Promise<ApiOrder> {
+  const companyId = getActiveCompanyId();
+
   return apiFetch<ApiOrder>(
     "/orders",
     {
@@ -26,7 +29,7 @@ export function createOrder(
       },
       body: JSON.stringify({
         ...payload,
-        companyId: COMPANY_ID,
+        companyId,
       }),
     },
   );
@@ -36,8 +39,10 @@ export function updateOrderStatus(
   id: string,
   status: OrderStatus,
 ): Promise<ApiOrder> {
+  const companyId = getActiveCompanyId();
+
   return apiFetch<ApiOrder>(
-    `/orders/${id}/status?companyId=${COMPANY_ID}`,
+    `/orders/${id}/status?companyId=${companyId}`,
     {
       method: "PATCH",
       headers: {
@@ -53,8 +58,10 @@ export function updateOrderStatus(
 export function deleteOrder(
   id: string,
 ): Promise<void> {
+  const companyId = getActiveCompanyId();
+
   return apiFetch<void>(
-    `/orders/${id}?companyId=${COMPANY_ID}`,
+    `/orders/${id}?companyId=${companyId}`,
     {
       method: "DELETE",
     },

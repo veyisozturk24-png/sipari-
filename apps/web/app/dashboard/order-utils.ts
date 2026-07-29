@@ -3,7 +3,13 @@ import { OrderStatus } from "./order-types";
 export function getStatusLabel(status: OrderStatus) {
   switch (status) {
     case "DRAFT":
-      return "Yeni";
+      return "Taslak";
+
+    case "PENDING":
+      return "Onay bekliyor";
+
+    case "CONFIRMED":
+      return "Onaylandı";
 
     case "PREPARING":
       return "Hazırlanıyor";
@@ -14,10 +20,26 @@ export function getStatusLabel(status: OrderStatus) {
     case "DELIVERED":
       return "Teslim Edildi";
 
-    case "COMPLETED":
-      return "Tamamlandı";
+    case "CANCELLED":
+      return "İptal edildi";
+
+    case "RETURNED":
+      return "İade edildi";
 
     default:
       return status;
   }
+}
+
+export function getNextOrderStatuses(status: OrderStatus) {
+  const transitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+    DRAFT: ["PENDING", "CANCELLED"],
+    PENDING: ["CONFIRMED", "CANCELLED"],
+    CONFIRMED: ["PREPARING", "CANCELLED"],
+    PREPARING: ["SHIPPED", "CANCELLED"],
+    SHIPPED: ["DELIVERED", "RETURNED"],
+    DELIVERED: ["RETURNED"],
+  };
+
+  return [status, ...(transitions[status] ?? [])];
 }
