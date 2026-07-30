@@ -1,34 +1,48 @@
 
+import AppIcon, { type AppIconName } from "@/components/app-icon";
+
 const features = [
   {
     title: "Tüm kanallar tek panelde",
     description:
       "WhatsApp, Instagram, Facebook ve web sitesi siparişlerini tek ekrandan yönetin.",
+    icon: "inbox" as AppIconName,
+    color: "bg-violet-100 text-violet-700",
   },
   {
     title: "Konuşmadan sipariş oluşturun",
     description:
       "Müşteriyle yazışırken ürün, beden, renk ve adet bilgilerini siparişe dönüştürün.",
+    icon: "sparkles" as AppIconName,
+    color: "bg-fuchsia-100 text-fuchsia-700",
   },
   {
     title: "Stok hatalarını azaltın",
     description:
       "Siparişleri ortak stok yapısına bağlayarak çift satış riskini azaltın.",
+    icon: "stock" as AppIconName,
+    color: "bg-orange-100 text-orange-700",
   },
   {
     title: "Kargo sürecini takip edin",
     description:
       "Hazırlanan, paketlenen ve kargoya verilen siparişleri tek akışta görün.",
+    icon: "truck" as AppIconName,
+    color: "bg-sky-100 text-sky-700",
   },
   {
     title: "Müşteri geçmişini görün",
     description:
       "Konuşmaları, siparişleri ve müşteri notlarını tek profilde görüntüleyin.",
+    icon: "customers" as AppIconName,
+    color: "bg-emerald-100 text-emerald-700",
   },
   {
     title: "Yapay zekâ desteği",
     description:
       "Mesajlardan ürün, renk, beden ve adet bilgilerini otomatik olarak çıkarın.",
+    icon: "chart" as AppIconName,
+    color: "bg-rose-100 text-rose-700",
   },
 ];
 
@@ -41,11 +55,11 @@ const steps = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <main className="min-h-screen overflow-hidden bg-slate-50 text-slate-950">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <a href="#" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-rose-500 to-violet-700 text-lg font-black text-white">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-rose-500 to-violet-700 text-lg font-black text-white shadow-lg shadow-violet-300/60">
               S
             </span>
 
@@ -75,7 +89,7 @@ export default function Home() {
             </a>
             <a
               href="#pilot"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
             >
               Pilot kullanıcı olun
             </a>
@@ -84,12 +98,12 @@ export default function Home() {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="absolute inset-x-0 top-0 -z-10 h-[700px] bg-[radial-gradient(circle_at_20%_10%,rgba(249,115,22,0.15),transparent_35%),radial-gradient(circle_at_80%_5%,rgba(109,40,217,0.16),transparent_38%)]" />
+        <div className="absolute inset-x-0 top-0 -z-10 h-[760px] bg-[radial-gradient(circle_at_16%_14%,rgba(249,115,22,0.19),transparent_30%),radial-gradient(circle_at_78%_5%,rgba(109,40,217,0.2),transparent_38%),radial-gradient(circle_at_68%_65%,rgba(236,72,153,0.1),transparent_28%)]" />
 
         <div className="mx-auto grid max-w-7xl items-center gap-16 px-6 py-24 lg:grid-cols-2 lg:py-32">
           <div>
-            <p className="inline-flex rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 shadow-sm">
-              Sosyal ticaret yönetim platformu
+            <p className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/90 px-4 py-2 text-sm font-bold text-violet-700 shadow-sm backdrop-blur">
+              <AppIcon name="sparkles" size={16} /> Sosyal ticaret yönetim platformu
             </p>
 
             <h1 className="mt-7 text-5xl font-black leading-tight tracking-tight sm:text-6xl">
@@ -107,14 +121,14 @@ export default function Home() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <a
                 href="#pilot"
-                className="rounded-xl bg-slate-950 px-7 py-4 text-center font-bold text-white hover:bg-slate-800"
+              className="rounded-xl bg-slate-950 px-7 py-4 text-center font-bold text-white shadow-xl shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 Ücretsiz pilot başvurusu
               </a>
 
               <a
                 href="#demo"
-                className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-center font-bold text-slate-800 hover:border-slate-400"
+              className="rounded-xl border border-slate-300 bg-white/80 px-7 py-4 text-center font-bold text-slate-800 transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
               >
                 Demo ekranını inceleyin
               </a>
@@ -127,16 +141,14 @@ export default function Home() {
               </a>
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-5 text-sm font-medium text-slate-600">
-              <span>✓ Ücretsiz kurulum desteği</span>
-              <span>✓ Kredi kartı gerekmez</span>
-              <span>✓ İlk işletmelere özel koşullar</span>
+            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-slate-600">
+              {['Ücretsiz kurulum desteği', 'Kredi kartı gerekmez', 'İlk işletmelere özel koşullar'].map((item) => <span key={item} className="inline-flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-100 text-emerald-700"><AppIcon name="check" size={13} strokeWidth={2.5} /></span>{item}</span>)}
             </div>
           </div>
 
           <div
             id="demo"
-            className="rounded-[30px] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/60"
+            className="relative rounded-[30px] border border-white/80 bg-white/90 p-4 shadow-2xl shadow-violet-200/50 backdrop-blur"
           >
             <div className="overflow-hidden rounded-2xl bg-slate-950">
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-white">
@@ -145,8 +157,8 @@ export default function Home() {
                   <p className="font-bold">Gelen Kutusu</p>
                 </div>
 
-                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
-                  12 yeni mesaj
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> 12 yeni mesaj
                 </span>
               </div>
 
@@ -179,8 +191,8 @@ export default function Home() {
                   </div>
 
                   <div className="mt-5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-orange-50 p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-violet-700">
-                      Yapay zekâ sipariş önerisi
+                    <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-violet-700">
+                      <AppIcon name="sparkles" size={15} /> Yapay zekâ sipariş önerisi
                     </p>
 
                     <div className="mt-4 grid grid-cols-3 gap-3">
@@ -233,11 +245,12 @@ export default function Home() {
             {features.map((feature, index) => (
               <article
                 key={feature.title}
-                className="rounded-3xl border border-slate-200 bg-slate-50 p-7"
+                className="group rounded-3xl border border-slate-200 bg-slate-50 p-7 transition duration-200 hover:-translate-y-1 hover:border-violet-200 hover:bg-white hover:shadow-xl hover:shadow-violet-100/60"
               >
-                <span className="text-sm font-black text-orange-500">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className={`grid h-12 w-12 place-items-center rounded-2xl ${feature.color}`}><AppIcon name={feature.icon} size={22} /></span>
+                  <span className="text-sm font-black text-orange-500">{String(index + 1).padStart(2, "0")}</span>
+                </div>
 
                 <h3 className="mt-6 text-xl font-black">{feature.title}</h3>
 
@@ -271,8 +284,8 @@ export default function Home() {
                 key={step}
                 className="flex items-center gap-5 rounded-3xl border border-slate-200 bg-white p-6"
               >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-lg font-black text-white">
-                  {index + 1}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-700 to-fuchsia-600 text-lg font-black text-white shadow-lg shadow-violet-200">
+                  0{index + 1}
                 </span>
 
                 <p className="font-bold text-slate-800">{step}</p>

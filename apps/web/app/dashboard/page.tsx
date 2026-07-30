@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
+import AppIcon, { type AppIconName } from '@/components/app-icon';
 import styles from './dashboard.module.css';
 import OrdersTable from './orders-table';
 import NewOrderButton from './new-order-button';
@@ -13,21 +14,21 @@ const channels = [
     name: 'WhatsApp',
     detail: '12 yeni mesaj',
     orders: '16 sipariş',
-    icon: 'WA',
+    icon: 'whatsapp' as AppIconName,
     className: 'whatsapp',
   },
   {
     name: 'Instagram',
     detail: '5 yeni mesaj',
     orders: '6 sipariş',
-    icon: 'IG',
+    icon: 'instagram' as AppIconName,
     className: 'instagram',
   },
   {
     name: 'Web Mağaza',
     detail: 'Tüm sistemler aktif',
     orders: '2 sipariş',
-    icon: 'WEB',
+    icon: 'globe' as AppIconName,
     className: 'web',
   },
 ];
@@ -60,10 +61,10 @@ export default function DashboardPage() {
     const overview = dashboard?.overview;
 
     return [
-      { title: 'Bugünkü sipariş', value: String(overview?.todayOrders ?? 0), change: '', detail: 'Bugün', icon: '🛍️' },
-      { title: 'Bugünkü ciro', value: currency.format(overview?.todayRevenue ?? 0), change: '', detail: 'Bugün', icon: '₺' },
-      { title: 'Bekleyen sipariş', value: String(overview?.pendingOrders ?? 0), change: '', detail: 'İşlem bekliyor', icon: '⏱' },
-      { title: 'Aktif müşteriler', value: String(overview?.customers ?? 0), change: '', detail: 'Kayıtlı müşteri', icon: '👥' },
+      { title: 'Bugünkü sipariş', value: String(overview?.todayOrders ?? 0), change: '', detail: 'Bugün', icon: 'shopping-bag' as AppIconName },
+      { title: 'Bugünkü ciro', value: currency.format(overview?.todayRevenue ?? 0), change: '', detail: 'Bugün', icon: 'wallet' as AppIconName },
+      { title: 'Bekleyen sipariş', value: String(overview?.pendingOrders ?? 0), change: '', detail: 'İşlem bekliyor', icon: 'orders' as AppIconName },
+      { title: 'Aktif müşteriler', value: String(overview?.customers ?? 0), change: '', detail: 'Kayıtlı müşteri', icon: 'customers' as AppIconName },
     ];
   }, [dashboard]);
 
@@ -94,32 +95,32 @@ export default function DashboardPage() {
             <strong>{user?.companyMemberships[0]?.company.name ?? 'İşletme'}</strong>
             <small>{user?.companyMemberships[0]?.role ?? 'Kullanıcı'} hesabı</small>
           </div>
-          <span className={styles.chevron}>⌄</span>
+          <AppIcon name="chevron-down" size={16} className={styles.chevron} />
         </div>
 
         <nav className={styles.nav}>
           <p>MENÜ</p>
           <Link href="/dashboard" className={styles.active}>
-            <span>▦</span> Genel Bakış
+            <span><AppIcon name="layout" /></span> Genel Bakış
           </Link>
-          <Link href="/dashboard/inbox"><span>💬</span> Gelen Kutusu <b>17</b></Link>
-          <a href="#"><span>▣</span> Siparişler <b>7</b></a>
-          <Link href="/dashboard/products"><span>◇</span> Ürünler</Link>
-          <Link href="/dashboard/customers"><span>◉</span> Müşteriler</Link>
-          <Link href="/dashboard/products"><span>▤</span> Stok Yönetimi</Link>
+          <Link href="/dashboard/inbox"><span><AppIcon name="inbox" /></span> Gelen Kutusu <b>17</b></Link>
+          <a href="#"><span><AppIcon name="orders" /></span> Siparişler <b>7</b></a>
+          <Link href="/dashboard/products"><span><AppIcon name="box" /></span> Ürünler</Link>
+          <Link href="/dashboard/customers"><span><AppIcon name="customers" /></span> Müşteriler</Link>
+          <Link href="/dashboard/products"><span><AppIcon name="stock" /></span> Stok Yönetimi</Link>
 
           <Link href="/dashboard/shipping">
-            <span>🚚</span>
+            <span><AppIcon name="truck" /></span>
             Kargo Merkezi
           </Link>
 
           <p>YÖNETİM</p>
-          <a href="#"><span>⌁</span> Kanallar</a>
-          <a href="#"><span>⚙</span> Ayarlar</a>
+          <a href="#"><span><AppIcon name="message" /></span> Kanallar</a>
+          <a href="#"><span><AppIcon name="settings" /></span> Ayarlar</a>
         </nav>
 
         <div className={styles.upgrade}>
-          <span>⚡</span>
+          <span><AppIcon name="bolt" size={16} /></span>
           <strong>İşini büyüt</strong>
           <p>Daha fazla kanal ve otomasyon için planını yükselt.</p>
           <button>Planları incele</button>
@@ -131,20 +132,21 @@ export default function DashboardPage() {
             <strong>{user?.name ?? 'Kullanıcı'}</strong>
             <small>{user?.email ?? ''}</small>
           </div>
-          <span>⋮</span>
+          <AppIcon name="more" size={18} className={styles.profileMenu} />
         </div>
       </aside>
 
       <main className={styles.main}>
         <header className={styles.header}>
           <div>
-            <h1>Günaydın, {user?.name?.split(' ')[0] ?? '👋'} 👋</h1>
+            <span className={styles.eyebrow}>OPERASYON MERKEZİ</span>
+            <h1>Günaydın, {user?.name?.split(' ')[0] ?? 'işletme sahibi'} <span>✦</span></h1>
             <p>İşletmende bugün neler olduğuna göz atalım.</p>
           </div>
 
           <div className={styles.headerActions}>
             <button className={styles.iconButton} aria-label="Bildirimler">
-              ♢
+              <AppIcon name="bell" />
               <i />
             </button>
             <NewOrderButton />
@@ -155,8 +157,8 @@ export default function DashboardPage() {
           {stats.map((stat) => (
             <article className={styles.statCard} key={stat.title}>
               <div className={styles.statTop}>
-                <span className={styles.statIcon}>{stat.icon}</span>
-                <button aria-label="Detaylar">⋮</button>
+                <span className={styles.statIcon}><AppIcon name={stat.icon} /></span>
+                <button aria-label="Detaylar"><AppIcon name="more" size={17} /></button>
               </div>
               <p>{stat.title}</p>
               <strong>{stat.value}</strong>
@@ -234,14 +236,14 @@ export default function DashboardPage() {
                 <h2>Satış kanalları</h2>
                 <p>Bağlı kanalların durumu</p>
               </div>
-              <button>⋯</button>
+              <button aria-label="Kanal seçenekleri"><AppIcon name="more" size={18} /></button>
             </div>
 
             <div className={styles.channelList}>
               {channels.map((channel) => (
                 <div className={styles.channel} key={channel.name}>
                   <span className={`${styles.channelIcon} ${styles[channel.className]}`}>
-                    {channel.icon}
+                    <AppIcon name={channel.icon} size={20} />
                   </span>
                   <div>
                     <strong>{channel.name}</strong>
@@ -255,7 +257,7 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <button className={styles.connectButton}>＋ Yeni kanal bağla</button>
+            <button className={styles.connectButton}><AppIcon name="plus" size={16} /> Yeni kanal bağla</button>
           </article>
         </section>
 
@@ -265,7 +267,7 @@ export default function DashboardPage() {
               <h2>Son siparişler</h2>
               <p>Tüm kanallardan gelen en yeni siparişler</p>
             </div>
-            <button className={styles.viewAll}>Tümünü görüntüle →</button>
+            <button className={styles.viewAll}>Tümünü görüntüle <AppIcon name="arrow-right" size={15} /></button>
           </div>
           <OrdersTable />
         </section>

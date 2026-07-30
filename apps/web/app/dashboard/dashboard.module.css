@@ -1,6 +1,9 @@
 .shell {
   min-height: 100vh;
-  background: #f7f7fb;
+  background:
+    radial-gradient(circle at 90% -10%, rgba(237, 70, 152, 0.11), transparent 27%),
+    radial-gradient(circle at 56% 0%, rgba(124, 58, 237, 0.12), transparent 31%),
+    #f7f7fc;
   color: #201a2e;
   display: flex;
   font-family: Arial, Helvetica, sans-serif;
@@ -11,8 +14,8 @@
   min-height: 100vh;
   position: fixed;
   inset: 0 auto 0 0;
-  background: #ffffff;
-  border-right: 1px solid #ece9f2;
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(225, 219, 237, 0.9);
   padding: 24px 18px 18px;
   display: flex;
   flex-direction: column;
@@ -42,8 +45,8 @@
   border-radius: 11px;
   color: #fff;
   font-size: 20px;
-  background: linear-gradient(135deg, #f97316, #7c3aed);
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.22);
+  background: linear-gradient(145deg, #ff7a18 0%, #ec4899 47%, #6d28d9 100%);
+  box-shadow: 0 10px 23px rgba(124, 58, 237, 0.3);
 }
 
 .workspace {
@@ -126,19 +129,26 @@
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
-  transition: 160ms ease;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
 .nav a:hover {
   color: #6d28d9;
   background: #f8f5ff;
+  transform: translateX(2px);
 }
 
 .nav a span {
   width: 20px;
   color: #8d849b;
-  font-size: 16px;
+  display: grid;
+  place-items: center;
   text-align: center;
+}
+
+.nav a svg {
+  width: 18px;
+  height: 18px;
 }
 
 .nav a b {
@@ -178,7 +188,7 @@
   place-items: center;
   border-radius: 8px;
   background: #ede9fe;
-  font-size: 13px;
+  color: #7c3aed;
 }
 
 .upgrade strong {
@@ -227,24 +237,39 @@
   color: #9c94a8;
 }
 
+.profileMenu {
+  flex: 0 0 auto;
+}
+
 .main {
   width: calc(100% - 258px);
   margin-left: 258px;
-  padding: 28px 34px 42px;
+  padding: 30px 36px 48px;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 27px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin-bottom: 7px;
+  color: #7c3aed;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 24px;
-  letter-spacing: -0.6px;
+  font-size: clamp(24px, 2vw, 29px);
+  letter-spacing: -0.85px;
 }
+
+.header h1 span { color: #f97316; }
 
 .header p {
   margin: 7px 0 0;
@@ -271,8 +296,12 @@
   border: 1px solid #e8e4ed;
   background: #fff;
   color: #675f73;
-  font-size: 20px;
+  display: grid;
+  place-items: center;
+  transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
+
+.iconButton:hover { border-color: #c4b5fd; color: #6d28d9; transform: translateY(-1px); }
 
 .iconButton i {
   width: 6px;
@@ -313,15 +342,31 @@
 .revenueCard,
 .channelsCard,
 .ordersCard {
-  border: 1px solid #ebe8f0;
-  border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 3px 16px rgba(43, 33, 61, 0.035);
+  border: 1px solid rgba(230, 225, 238, 0.92);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(43, 33, 61, 0.055);
 }
 
 .statCard {
-  padding: 17px;
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
+
+.statCard::after {
+  width: 95px;
+  height: 95px;
+  position: absolute;
+  top: -54px;
+  right: -38px;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.07);
+  content: "";
+}
+
+.statCard:hover { box-shadow: 0 17px 38px rgba(78, 46, 122, 0.11); transform: translateY(-3px); }
 
 .statTop {
   display: flex;
@@ -334,10 +379,9 @@
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: #f1ebff;
+  background: linear-gradient(135deg, #f4edff, #fff0f7);
   color: #6d28d9;
-  font-size: 14px;
-  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.06);
 }
 
 .statTop button,
@@ -352,12 +396,14 @@
   margin: 15px 0 6px;
   color: #7f778a;
   font-size: 11px;
+  font-weight: 650;
 }
 
 .statCard > strong {
   display: block;
   margin-bottom: 9px;
-  font-size: 22px;
+  font-size: clamp(22px, 2vw, 26px);
+  letter-spacing: -0.7px;
 }
 
 .statCard small {
@@ -380,7 +426,7 @@
 .revenueCard,
 .channelsCard,
 .ordersCard {
-  padding: 20px;
+  padding: 22px;
 }
 
 .cardHeading {
@@ -391,7 +437,8 @@
 
 .cardHeading h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
+  letter-spacing: -0.25px;
 }
 
 .cardHeading p {
@@ -402,7 +449,7 @@
 
 .cardHeading select {
   border: 1px solid #e9e5ed;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 7px 10px;
   background: #fff;
   color: #655d70;
@@ -429,7 +476,8 @@
 }
 
 .revenueSummary strong {
-  font-size: 22px;
+  font-size: 25px;
+  letter-spacing: -0.7px;
 }
 
 .revenueSummary .growth {
@@ -515,7 +563,7 @@
   align-items: center;
   gap: 11px;
   border-bottom: 1px solid #f0edf3;
-  padding: 13px 0;
+  padding: 14px 0;
 }
 
 .channelIcon {
@@ -524,8 +572,7 @@
   display: grid;
   place-items: center;
   border-radius: 11px;
-  font-size: 9px;
-  font-weight: 900;
+  box-shadow: inset 0 0 0 1px rgba(33, 27, 53, 0.05);
 }
 
 .whatsapp {
@@ -580,8 +627,12 @@
 
 .connectButton {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px dashed #d9d1e5;
-  border-radius: 9px;
+  border-radius: 11px;
   margin-top: 15px;
   padding: 9px;
   background: #faf9fc;
@@ -591,11 +642,16 @@
   cursor: pointer;
 }
 
+.connectButton:hover { border-color: #a78bfa; background: #f6f1ff; }
+
 .ordersCard {
   padding-bottom: 5px;
 }
 
 .viewAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: #6d28d9 !important;
   font-size: 10px;
   font-weight: 700;
@@ -749,7 +805,7 @@
   .main {
     width: 100%;
     margin-left: 0;
-    padding: 20px 15px 35px;
+    padding: 21px 15px 35px;
   }
 
   .header {
@@ -759,6 +815,8 @@
   .header h1 {
     font-size: 20px;
   }
+
+  .eyebrow { margin-bottom: 5px; font-size: 8px; }
 
   .header p {
     max-width: 210px;
@@ -784,11 +842,17 @@
   .contentGrid {
     gap: 12px;
   }
+
+  .revenueCard,
+  .channelsCard,
+  .ordersCard { border-radius: 16px; padding: 16px; }
+
+  .chart { height: 190px; }
 }
 
 @media (max-width: 470px) {
   .statsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .primaryButton {
