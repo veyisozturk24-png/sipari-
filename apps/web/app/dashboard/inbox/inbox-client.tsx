@@ -1,21 +1,24 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import { getActiveCompanyId } from '@/lib/auth';
 import styles from './inbox.module.css';
 import ConvertOrderModal from './convert-order-modal';
 
 type Channel = 'WhatsApp' | 'Instagram' | 'Facebook';
 
 type Message = {
-  id: number;
+  id: string;
   sender: 'customer' | 'business';
   text: string;
   time: string;
 };
 
 type Conversation = {
-  id: number;
+  id: string;
+  customerId: string;
   customer: string;
   initials: string;
   phone: string;
@@ -27,132 +30,19 @@ type Conversation = {
   messages: Message[];
 };
 
-const initialConversations: Conversation[] = [
-  {
-    id: 1,
-    customer: 'Ayşe Yılmaz',
-    initials: 'AY',
-    phone: '0555 321 45 67',
-    channel: 'WhatsApp',
-    preview: 'Siyah sweatshirt stokta var mı?',
-    time: '10:42',
-    unread: 2,
-    online: true,
-    messages: [
-      {
-        id: 1,
-        sender: 'customer',
-        text: 'Merhaba, siyah sweatshirt stokta var mı?',
-        time: '10:38',
-      },
-      {
-        id: 2,
-        sender: 'business',
-        text: 'Merhaba Ayşe Hanım, evet stokta mevcut.',
-        time: '10:39',
-      },
-      {
-        id: 3,
-        sender: 'customer',
-        text: 'M beden istiyorum. İstanbul Kadıköy’e gönderim olur mu?',
-        time: '10:41',
-      },
-      {
-        id: 4,
-        sender: 'customer',
-        text: 'Bir tane sipariş vermek istiyorum.',
-        time: '10:42',
-      },
-    ],
-  },
-  {
-    id: 2,
-    customer: 'Mehmet Kaya',
-    initials: 'MK',
-    phone: '0532 440 18 22',
-    channel: 'Instagram',
-    preview: 'Kapıda ödeme seçeneğiniz var mı?',
-    time: '09:28',
-    unread: 1,
-    online: false,
-    messages: [
-      {
-        id: 1,
-        sender: 'customer',
-        text: 'Merhaba, slim fit kot pantolonun 32 bedeni mevcut mu?',
-        time: '09:20',
-      },
-      {
-        id: 2,
-        sender: 'business',
-        text: 'Merhaba, evet 32 beden stokta bulunuyor.',
-        time: '09:23',
-      },
-      {
-        id: 3,
-        sender: 'customer',
-        text: 'Kapıda ödeme seçeneğiniz var mı?',
-        time: '09:28',
-      },
-    ],
-  },
-  {
-    id: 3,
-    customer: 'Selin Demir',
-    initials: 'SD',
-    phone: '0544 771 29 10',
-    channel: 'WhatsApp',
-    preview: 'Kargo takip numarasını alabilir miyim?',
-    time: 'Dün',
-    unread: 0,
-    online: true,
-    messages: [
-      {
-        id: 1,
-        sender: 'customer',
-        text: 'Siparişim kargoya verildi mi?',
-        time: '16:10',
-      },
-      {
-        id: 2,
-        sender: 'business',
-        text: 'Evet, siparişiniz bugün kargoya verildi.',
-        time: '16:14',
-      },
-      {
-        id: 3,
-        sender: 'customer',
-        text: 'Kargo takip numarasını alabilir miyim?',
-        time: '16:18',
-      },
-    ],
-  },
-  {
-    id: 4,
-    customer: 'Can Öztürk',
-    initials: 'CÖ',
-    phone: '0507 615 90 31',
-    channel: 'Facebook',
-    preview: 'Teşekkür ederim, ürün elime ulaştı.',
-    time: 'Dün',
-    unread: 0,
-    online: false,
-    messages: [
-      {
-        id: 1,
-        sender: 'customer',
-        text: 'Teşekkür ederim, ürün elime ulaştı.',
-        time: '14:07',
-      },
-      {
-        id: 2,
-        sender: 'business',
-        text: 'Güzel günlerde kullanın. Bizi tercih ettiğiniz için teşekkür ederiz.',
-        time: '14:10',
-      },
-    ],
-  },
-];
+type ApiConversation = {
+  id: string;
+  customer: { id: string; name: string; phone: string | null };
+  channel: { name: string; platform: 'WHATSAPP' };
+  messages: Array<{
+    id: string;
+    direction: 'INBOUND' | 'OUTBOUND';
+    text: string | null;
+    sentAt: string | null;
+    createdAt: string;
+  }>;
+  lastMessageAt: string | null;
+};
 
 const quickReplies = [
   'Evet, ürün stokta mevcut.',
@@ -161,17 +51,77 @@ const quickReplies = [
 ];
 
 export default function InboxClient() {
-  const [conversations, setConversations] =
-    useState<Conversation[]>(initialConversations);
-  const [selectedId, setSelectedId] = useState(1);
+  const companyId = getActiveCompanyId();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState('');
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!companyId) {
+      setIsLoading(false);
+      return;
+    }
+
+    async function loadConversations() {
+      try {
+        setIsLoading(true);
+        const data = await apiFetch<ApiConversation[]>(`/whatsapp/conversations?companyId=${companyId}`);
+        const mapped = data.map((conversation) => {
+          const name = conversation.customer.name;
+          const lastMessage = conversation.messages.at(-1);
+          const lastMessageAt = conversation.lastMessageAt ?? lastMessage?.sentAt ?? lastMessage?.createdAt;
+
+          return {
+            id: conversation.id,
+            customerId: conversation.customer.id,
+            customer: name,
+            initials: name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('tr-TR'),
+            phone: conversation.customer.phone ?? 'Telefon bilgisi yok',
+            channel: 'WhatsApp' as const,
+            preview: lastMessage?.text ?? 'Medya veya sistem mesajı',
+            time: lastMessageAt ? new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastMessageAt)) : '',
+            unread: 0,
+            online: false,
+            messages: conversation.messages.map((item) => ({
+              id: item.id,
+              sender: item.direction === 'OUTBOUND' ? 'business' as const : 'customer' as const,
+              text: item.text ?? 'Medya veya sistem mesajı',
+              time: new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(item.sentAt ?? item.createdAt)),
+            })),
+          };
+        });
+
+        setConversations(mapped);
+        setSelectedId((current) => current ?? mapped[0]?.id ?? null);
+      } catch {
+        setToast('WhatsApp konuşmaları yüklenemedi.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadConversations();
+  }, [companyId]);
 
   const selectedConversation =
-    conversations.find((conversation) => conversation.id === selectedId) ??
-    conversations[0];
+    conversations.find((conversation) => conversation.id === selectedId) ?? null;
+  const displayConversation: Conversation = selectedConversation ?? {
+    id: 'empty',
+    customerId: '',
+    customer: 'Henüz WhatsApp konuşması yok',
+    initials: 'WA',
+    phone: 'Meta bağlantısından sonra mesajlar burada görünür.',
+    channel: 'WhatsApp',
+    preview: '',
+    time: '',
+    unread: 0,
+    online: false,
+    messages: [],
+  };
 
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('tr-TR');
@@ -187,7 +137,7 @@ export default function InboxClient() {
     );
   }, [conversations, search]);
 
-  function selectConversation(id: number) {
+  function selectConversation(id: string) {
     setSelectedId(id);
 
     setConversations((current) =>
@@ -211,37 +161,14 @@ export default function InboxClient() {
       return;
     }
 
-    const now = new Intl.DateTimeFormat('tr-TR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date());
-
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id === selectedId
-          ? {
-              ...conversation,
-              preview: text,
-              time: now,
-              messages: [
-                ...conversation.messages,
-                {
-                  id: Date.now(),
-                  sender: 'business',
-                  text,
-                  time: now,
-                },
-              ],
-            }
-          : conversation,
-      ),
-    );
-
+    setToast('Mesaj gönderme, Meta WhatsApp bağlantısı tamamlandığında açılacak.');
     setMessage('');
   }
 
   function convertToOrder() {
-    setIsConvertModalOpen(true);
+    if (selectedConversation) {
+      setIsConvertModalOpen(true);
+    }
   }
 
   return (
@@ -368,7 +295,9 @@ export default function InboxClient() {
             </div>
 
             <div className={styles.conversationList}>
-              {filteredConversations.map((conversation) => (
+              {isLoading && <div className={styles.emptySearch}>Konuşmalar yükleniyor...</div>}
+
+              {!isLoading && filteredConversations.map((conversation) => (
                 <button
                   type="button"
                   key={conversation.id}
@@ -413,7 +342,7 @@ export default function InboxClient() {
                 </button>
               ))}
 
-              {filteredConversations.length === 0 && (
+              {!isLoading && filteredConversations.length === 0 && (
                 <div className={styles.emptySearch}>
                   Eşleşen konuşma bulunamadı.
                 </div>
@@ -425,16 +354,16 @@ export default function InboxClient() {
             <header className={styles.chatHeader}>
               <div className={styles.chatCustomer}>
                 <span>
-                  {selectedConversation.initials}
-                  {selectedConversation.online && <i />}
+                  {displayConversation.initials}
+                  {displayConversation.online && <i />}
                 </span>
 
                 <div>
-                  <strong>{selectedConversation.customer}</strong>
+                  <strong>{displayConversation.customer}</strong>
                   <small>
-                    {selectedConversation.online
+                    {displayConversation.online
                       ? 'Şu anda çevrimiçi'
-                      : selectedConversation.phone}
+                      : displayConversation.phone}
                   </small>
                 </div>
               </div>
@@ -452,6 +381,7 @@ export default function InboxClient() {
                   type="button"
                   className={styles.convertButton}
                   onClick={convertToOrder}
+                  disabled={!selectedConversation}
                 >
                   <span>＋</span>
                   Siparişe dönüştür
@@ -464,7 +394,7 @@ export default function InboxClient() {
                 <span>Bugün</span>
               </div>
 
-              {selectedConversation.messages.map((item) => (
+              {displayConversation.messages.map((item) => (
                 <div
                   key={item.id}
                   className={
@@ -479,6 +409,10 @@ export default function InboxClient() {
                   </div>
                 </div>
               ))}
+
+              {!selectedConversation && (
+                <div className={styles.emptySearch}>WhatsApp numaranızı Meta üzerinden bağladığınızda müşterilerden gelen mesajlar burada görünecek.</div>
+              )}
             </div>
 
             <div className={styles.quickReplies}>
@@ -521,11 +455,11 @@ export default function InboxClient() {
           <aside className={styles.customerPanel}>
             <div className={styles.customerCard}>
               <span className={styles.largeAvatar}>
-                {selectedConversation.initials}
+                {displayConversation.initials}
               </span>
 
-              <h3>{selectedConversation.customer}</h3>
-              <p>{selectedConversation.phone}</p>
+              <h3>{displayConversation.customer}</h3>
+              <p>{displayConversation.phone}</p>
 
               <div className={styles.customerButtons}>
                 <button type="button">☎</button>
@@ -543,12 +477,12 @@ export default function InboxClient() {
               <dl>
                 <div>
                   <dt>Kanal</dt>
-                  <dd>{selectedConversation.channel}</dd>
+                  <dd>{displayConversation.channel}</dd>
                 </div>
 
                 <div>
                   <dt>Telefon</dt>
-                  <dd>{selectedConversation.phone}</dd>
+                  <dd>{displayConversation.phone}</dd>
                 </div>
 
                 <div>
@@ -603,10 +537,11 @@ export default function InboxClient() {
 
       <ConvertOrderModal
         customer={{
-          customer: selectedConversation.customer,
-          phone: selectedConversation.phone,
-          initials: selectedConversation.initials,
-          channel: selectedConversation.channel,
+          customer: displayConversation.customer,
+          customerId: displayConversation.customerId,
+          phone: displayConversation.phone,
+          initials: displayConversation.initials,
+          channel: displayConversation.channel,
         }}
         isOpen={isConvertModalOpen}
         onClose={() => setIsConvertModalOpen(false)}

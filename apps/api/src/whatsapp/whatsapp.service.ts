@@ -48,6 +48,31 @@ export class WhatsAppService {
     });
   }
 
+  findConversations(companyId: string) {
+    return this.prisma.conversation.findMany({
+      where: {
+        companyId,
+        channel: { platform: ChannelPlatform.WHATSAPP },
+      },
+      include: {
+        customer: { select: { id: true, name: true, phone: true } },
+        channel: { select: { id: true, name: true, platform: true } },
+        messages: {
+          orderBy: [{ sentAt: 'asc' }, { createdAt: 'asc' }],
+          select: {
+            id: true,
+            direction: true,
+            type: true,
+            text: true,
+            sentAt: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
+    });
+  }
+
   async configureChannel(dto: ConfigureWhatsAppDto) {
     const phoneNumberId = dto.phoneNumberId.trim();
     const name = dto.displayName.trim();

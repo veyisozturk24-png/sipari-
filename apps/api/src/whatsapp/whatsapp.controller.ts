@@ -21,6 +21,11 @@ export class WhatsAppController {
     return this.whatsAppService.findChannels(companyId);
   }
 
+  @Get('conversations')
+  findConversations(@Query('companyId') companyId: string) {
+    return this.whatsAppService.findConversations(companyId);
+  }
+
   @Post('channels')
   configureChannel(@Body() dto: ConfigureWhatsAppDto) {
     return this.whatsAppService.configureChannel(dto);
