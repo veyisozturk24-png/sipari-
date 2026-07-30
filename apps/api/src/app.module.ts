@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { ShipmentsModule } from './shipments/shipments.module';
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PrismaModule,
     AuthModule,
     DashboardModule,
+    WhatsAppModule,
     ProductsModule,
     CustomersModule,
     OrdersModule,
