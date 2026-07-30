@@ -11,7 +11,7 @@ import styles from './dashboard.module.css';
 import { createOrder as createOrderApi } from './order-api';
 import { getActiveCompanyId, getSession } from '@/lib/auth';
 
-const API_URL = 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 type Customer = {
   id: string;
