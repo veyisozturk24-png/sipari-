@@ -112,67 +112,42 @@ export default function OrdersTable() {
 
   return (
     <>
-      <div
-        className={
-          styles.tableToolbar
-        }
-      >
-        <input
-          type="text"
-          placeholder="Sipariş veya müşteri ara..."
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value,
-            )
-          }
-        />
+      <div className={styles.tableToolbar}>
+        <label className={styles.searchField}>
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            placeholder="Sipariş veya müşteri ara"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
 
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value,
-            )
-          }
-        >
-          <option value="ALL">
-            Tüm Durumlar
-          </option>
+        <label className={styles.filterField}>
+          <span>Durum</span>
+          <select
+            aria-label="Sipariş durumuna göre filtrele"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="ALL">Tüm durumlar</option>
+            <option value="DRAFT">Taslak</option>
+            <option value="PENDING">Onay bekliyor</option>
+            <option value="CONFIRMED">Onaylandı</option>
+            <option value="PREPARING">Hazırlanıyor</option>
+            <option value="SHIPPED">Kargoda</option>
+            <option value="DELIVERED">Teslim edildi</option>
+            <option value="CANCELLED">İptal edildi</option>
+            <option value="RETURNED">İade edildi</option>
+          </select>
+        </label>
 
-          <option value="DRAFT">
-            Taslak
-          </option>
-
-          <option value="PREPARING">
-            Hazırlanıyor
-          </option>
-
-          <option value="SHIPPED">
-            Kargoda
-          </option>
-
-          <option value="DELIVERED">
-            Teslim Edildi
-          </option>
-
-          <option value="COMPLETED">
-            Tamamlandı
-          </option>
-        </select>
-
-        <button
-          onClick={loadOrders}
-        >
-          Yenile
-        </button>
-
-        <span>
-          {
-            filteredOrders.length
-          }{" "}
-          sipariş
-        </span>
+        <div className={styles.toolbarActions}>
+          <span className={styles.countPill}>{filteredOrders.length} sipariş</span>
+          <button type="button" className={styles.refreshButton} onClick={loadOrders}>
+            ↻ Yenile
+          </button>
+        </div>
       </div>
 
       {filteredOrders.length ===
@@ -182,89 +157,64 @@ export default function OrdersTable() {
           bulunamadı.
         </p>
       ) : (
-        <table
-          className={
-            styles.ordersTable
-          }
-        >
-          <thead>
-            <tr>
-              <th>
-                Sipariş No
-              </th>
+        <div className={styles.tableWrap}>
+          <table className={styles.ordersTable}>
+            <thead>
+              <tr>
+                <th>Sipariş</th>
+                <th>Müşteri</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>Tarih</th>
+                <th aria-label="İşlem" />
+              </tr>
+            </thead>
 
-              <th>
-                Müşteri
-              </th>
+            <tbody>
+              {filteredOrders.map((order) => {
+                const customerName = order.customer?.name ?? order.shippingName ?? "Müşteri";
+                const customerInitials = customerName
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+                  .toLocaleUpperCase("tr-TR");
 
-              <th>Tutar</th>
-
-              <th>
-                Durum
-              </th>
-
-              <th>
-                Tarih
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredOrders.map(
-              (order) => (
-                <tr
-                  key={order.id}
-                  className={
-                    styles.clickableRow
-                  }
-                  onClick={() =>
-                    openOrder(
-                      order,
-                    )
-                  }
-                >
-                  <td>
-                    {
-                      order.orderNumber
-                    }
-                  </td>
-
-                  <td>{order.customer?.name ?? "-"}</td>
-
-                  <td>
-                    {new Intl.NumberFormat(
-                      "tr-TR",
-                      {
-                        style:
-                          "currency",
-                        currency:
-                          "TRY",
-                      },
-                    ).format(
-                      order.totalAmount,
-                    )}
-                  </td>
-
-                  <td>
-                    <OrderStatusBadge
-                      status={
-                        order.status
-                      }
-                    />
-                  </td>
-
-                  <td>
-                    {new Date(
-                      order.createdAt,
-                    ).toLocaleString(
-                      "tr-TR",
-                    )}
-                  </td>
-                </tr>
-              ),
-            )}
-          </tbody>
-        </table>
+                return (
+                  <tr key={order.id} className={styles.clickableRow} onClick={() => openOrder(order)}>
+                    <td data-label="Sipariş">
+                      <strong className={styles.orderNumber}>{order.orderNumber}</strong>
+                      <span className={styles.orderMeta}>{order.items.length} ürün</span>
+                    </td>
+                    <td data-label="Müşteri">
+                      <div className={styles.customerCell}>
+                        <span className={styles.customerAvatar}>{customerInitials || "M"}</span>
+                        <div>
+                          <strong>{customerName}</strong>
+                          <span>{order.customer?.phone ?? order.shippingPhone ?? "İletişim bilgisi yok"}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Tutar" className={styles.amount}>
+                      {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(order.totalAmount)}
+                    </td>
+                    <td data-label="Durum"><OrderStatusBadge status={order.status} /></td>
+                    <td data-label="Tarih" className={styles.dateCell}>
+                      {new Date(order.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" })}
+                      <span>{new Date(order.createdAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
+                    </td>
+                    <td className={styles.actionCell}>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); openOrder(order); }}>
+                        İncele <span>→</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       <OrderDrawer
         key={selectedOrder?.id ?? "empty"}
