@@ -23,6 +23,9 @@
   background: #fff;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   box-shadow: -10px 0 30px rgba(0,0,0,.12);
   transition: right .25s ease;
   z-index: 100;
