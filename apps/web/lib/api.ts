@@ -17,14 +17,18 @@ export async function apiFetch<T>(
   options?: RequestInit,
 ): Promise<T> {
   const accessToken = getAccessToken();
+  const headers = new Headers(options?.headers);
+
+  headers.set('Content-Type', 'application/json');
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...(options?.headers ?? {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
