@@ -66,12 +66,20 @@ export default function Home() {
             </a>
           </nav>
 
-          <a
-            href="#pilot"
-            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
-          >
-            Pilot kullanıcı olun
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="/giris"
+              className="hidden rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 sm:inline-flex"
+            >
+              Giriş yap
+            </a>
+            <a
+              href="#pilot"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
+            >
+              Pilot kullanıcı olun
+            </a>
+          </div>
         </div>
       </header>
 
@@ -111,6 +119,13 @@ export default function Home() {
                 Demo ekranını inceleyin
               </a>
             </div>
+
+            <p className="mt-5 text-sm font-medium text-slate-600">
+              Zaten hesabın var mı?{" "}
+              <a href="/giris" className="font-bold text-violet-700 hover:text-violet-900">
+                Giriş yap →
+              </a>
+            </p>
 
             <div className="mt-8 flex flex-wrap gap-5 text-sm font-medium text-slate-600">
               <span>✓ Ücretsiz kurulum desteği</span>
@@ -313,11 +328,11 @@ export default function Home() {
                 name="from_name"
                 value="Siparİş Web Sitesi"
               />
-<input
-  type="hidden"
-  name="redirect"
-  value="http://localhost:3000/tesekkur"
-/>
+              <input
+                type="hidden"
+                name="redirect"
+                value="https://sipari-web-psi.vercel.app/tesekkur"
+              />
               <input
                 type="checkbox"
                 name="botcheck"
@@ -414,6 +429,14 @@ export default function Home() {
                   </select>
                 </label>
 
+                <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                  <input required type="checkbox" name="kvkk_notice_read" className="mt-1 h-4 w-4 accent-violet-700" />
+                  <span>
+                    <a href="/kvkk" target="_blank" className="font-bold text-violet-700 underline">KVKK Aydınlatma Metni</a>
+                    {"’ni okudum; başvurumun değerlendirilmesi kapsamında bilgilerimin işlenmesi hakkında bilgilendirildim."}
+                  </span>
+                </label>
+
                 <button
                   type="submit"
                   className="w-full rounded-xl bg-gradient-to-r from-violet-700 to-orange-500 px-5 py-4 font-black text-white"
@@ -448,13 +471,18 @@ export default function Home() {
 
           <div className="text-sm text-slate-500 md:text-right">
             <a
-              href="mailto:iletisim@siparis.app"
+              href="mailto:veyisozturk24@gmail.com"
               className="font-bold text-slate-700 hover:text-violet-700"
             >
-              iletisim@siparis.app
+              veyisozturk24@gmail.com
             </a>
 
-            <p className="mt-3">© 2026 Siparİş. Tüm hakları saklıdır.</p>
+            <div className="mt-3 flex justify-start gap-4 font-semibold md:justify-end">
+              <a href="/kvkk" className="hover:text-violet-700">KVKK Aydınlatma</a>
+              <a href="/gizlilik" className="hover:text-violet-700">Gizlilik</a>
+            </div>
+
+            <p className="mt-3">© 2026 Siparİş · Veyis Öztürk</p>
           </div>
         </div>
       </footer>
