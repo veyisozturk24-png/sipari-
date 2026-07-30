@@ -303,8 +303,17 @@ export class OrdersService {
 
   private canTransition(from: OrderStatus, to: OrderStatus) {
     const transitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
-      [OrderStatus.DRAFT]: [OrderStatus.PENDING, OrderStatus.CANCELLED],
-      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.DRAFT]: [
+        OrderStatus.PENDING,
+        OrderStatus.CONFIRMED,
+        OrderStatus.PREPARING,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.PENDING]: [
+        OrderStatus.CONFIRMED,
+        OrderStatus.PREPARING,
+        OrderStatus.CANCELLED,
+      ],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
       [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.RETURNED],

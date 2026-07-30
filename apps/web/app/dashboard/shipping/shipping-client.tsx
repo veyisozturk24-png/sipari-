@@ -66,10 +66,10 @@ const carrierLabels: Record<ShippingCarrier, string> = {
 
 function getNextStatuses(status: ShipmentStatus) {
   const transitions: Partial<Record<ShipmentStatus, ShipmentStatus[]>> = {
-    PREPARING: ["READY"],
-    READY: ["SHIPPED"],
-    SHIPPED: ["IN_TRANSIT"],
-    IN_TRANSIT: ["OUT_FOR_DELIVERY"],
+    PREPARING: ["READY", "SHIPPED", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"],
+    READY: ["SHIPPED", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"],
+    SHIPPED: ["IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"],
+    IN_TRANSIT: ["OUT_FOR_DELIVERY", "DELIVERED"],
     OUT_FOR_DELIVERY: ["DELIVERED"],
   };
 

@@ -152,10 +152,28 @@ export class ShipmentsService {
 
   private canTransition(from: ShipmentStatus, to: ShipmentStatus) {
     const transitions: Partial<Record<ShipmentStatus, ShipmentStatus[]>> = {
-      [ShipmentStatus.PREPARING]: [ShipmentStatus.READY],
-      [ShipmentStatus.READY]: [ShipmentStatus.SHIPPED],
-      [ShipmentStatus.SHIPPED]: [ShipmentStatus.IN_TRANSIT],
-      [ShipmentStatus.IN_TRANSIT]: [ShipmentStatus.OUT_FOR_DELIVERY],
+      [ShipmentStatus.PREPARING]: [
+        ShipmentStatus.READY,
+        ShipmentStatus.SHIPPED,
+        ShipmentStatus.IN_TRANSIT,
+        ShipmentStatus.OUT_FOR_DELIVERY,
+        ShipmentStatus.DELIVERED,
+      ],
+      [ShipmentStatus.READY]: [
+        ShipmentStatus.SHIPPED,
+        ShipmentStatus.IN_TRANSIT,
+        ShipmentStatus.OUT_FOR_DELIVERY,
+        ShipmentStatus.DELIVERED,
+      ],
+      [ShipmentStatus.SHIPPED]: [
+        ShipmentStatus.IN_TRANSIT,
+        ShipmentStatus.OUT_FOR_DELIVERY,
+        ShipmentStatus.DELIVERED,
+      ],
+      [ShipmentStatus.IN_TRANSIT]: [
+        ShipmentStatus.OUT_FOR_DELIVERY,
+        ShipmentStatus.DELIVERED,
+      ],
       [ShipmentStatus.OUT_FOR_DELIVERY]: [ShipmentStatus.DELIVERED],
     };
 

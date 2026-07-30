@@ -33,8 +33,8 @@ export function getStatusLabel(status: OrderStatus) {
 
 export function getNextOrderStatuses(status: OrderStatus) {
   const transitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
-    DRAFT: ["PENDING", "CANCELLED"],
-    PENDING: ["CONFIRMED", "CANCELLED"],
+    DRAFT: ["PENDING", "CONFIRMED", "PREPARING", "CANCELLED"],
+    PENDING: ["CONFIRMED", "PREPARING", "CANCELLED"],
     CONFIRMED: ["PREPARING", "CANCELLED"],
     PREPARING: ["SHIPPED", "CANCELLED"],
     SHIPPED: ["DELIVERED", "RETURNED"],
