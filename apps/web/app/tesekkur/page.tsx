@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function ThankYouPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
@@ -20,12 +22,12 @@ export default function ThankYouPage() {
         </p>
 
         <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-          <a
+          <Link
             href="/"
             className="rounded-xl bg-white px-7 py-4 font-black text-slate-950"
           >
             Ana sayfaya dön
-          </a>
+          </Link>
 
           <a
             href="mailto:iletisim@siparis.app"

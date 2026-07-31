@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Historical UI snapshots are kept for reference only; they are not app code.
+    "app/**/*.before-*.tsx",
+    "app/**/*.bak",
   ]),
 ]);
 

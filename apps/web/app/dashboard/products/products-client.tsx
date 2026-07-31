@@ -64,7 +64,6 @@ function formatCurrency(value: number) {
 export default function ProductsClient() {
   const companyId = getActiveCompanyId();
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'critical' | 'out'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,8 +74,6 @@ export default function ProductsClient() {
 
   useEffect(() => {
     async function loadProducts() {
-      setIsLoading(true);
-
       try {
         setError('');
 
@@ -91,8 +88,6 @@ export default function ProductsClient() {
             ? requestError.message
             : 'Ürünler yüklenemedi.',
         );
-      } finally {
-        setIsLoading(false);
       }
     }
 
