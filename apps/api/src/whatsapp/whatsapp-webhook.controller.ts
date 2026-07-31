@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Get,
   Header,
+  Logger,
   Post,
   Query,
   Req,
@@ -12,6 +13,8 @@ import { WhatsAppService } from './whatsapp.service';
 
 @Controller('webhooks/whatsapp')
 export class WhatsAppWebhookController {
+  private readonly logger = new Logger(WhatsAppWebhookController.name);
+
   constructor(private readonly whatsAppService: WhatsAppService) {}
 
   @Get()
@@ -33,11 +36,15 @@ export class WhatsAppWebhookController {
     @Body() payload: unknown,
     @Req() request: { rawBody?: Buffer; headers: { 'x-hub-signature-256'?: string } },
   ) {
+    this.logger.log('WhatsApp webhook isteği alındı.');
+
     if (!this.whatsAppService.isSignatureValid(request.rawBody, request.headers['x-hub-signature-256'])) {
+      this.logger.warn('WhatsApp webhook imzası doğrulanamadı.');
       throw new ForbiddenException('Webhook imzası geçersiz.');
     }
 
     await this.whatsAppService.receiveWebhook(payload);
+    this.logger.log('WhatsApp webhook isteği başarıyla işlendi.');
     return { received: true };
   }
 }
