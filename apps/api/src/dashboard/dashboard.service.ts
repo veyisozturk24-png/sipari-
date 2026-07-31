@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus, ProductStatus } from '../generated/prisma/enums';
+import { ChannelStatus, OrderStatus, ProductStatus } from '../generated/prisma/enums';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -21,6 +21,7 @@ export class DashboardService {
       orderItems,
       products,
       salesOrders,
+      channelConnections,
     ] = await Promise.all([
       this.prisma.order.aggregate({
         where: { companyId },
@@ -92,7 +93,30 @@ export class DashboardService {
         },
         select: { createdAt: true, totalAmount: true },
       }),
+      this.prisma.channelConnection.findMany({
+        where: { companyId },
+        select: {
+          id: true,
+          name: true,
+          platform: true,
+          status: true,
+          _count: { select: { conversations: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
     ]);
+
+    const channels = await Promise.all(
+      channelConnections.map(async (channel) => ({
+        name: channel.name,
+        platform: channel.platform,
+        status: channel.status,
+        conversations: channel._count.conversations,
+        messages: await this.prisma.message.count({
+          where: { conversation: { channelId: channel.id } },
+        }),
+      })),
+    );
 
     const orderStatusMap = new Map(
       statusCounts.map((item) => [item.status, item._count._all]),
@@ -119,6 +143,10 @@ export class DashboardService {
       topProducts,
       criticalStock,
       salesLast30Days: this.getDailySales(startDate, salesOrders),
+      channels: channels.map((channel) => ({
+        ...channel,
+        isConnected: channel.status === ChannelStatus.CONNECTED,
+      })),
     };
   }
 

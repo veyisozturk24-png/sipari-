@@ -15,6 +15,14 @@ export type DashboardData = {
     orders: number;
     revenue: number;
   }>;
+  channels: Array<{
+    name: string;
+    platform: string;
+    status: 'CONNECTED' | 'DISCONNECTED' | 'PENDING' | 'ERROR';
+    conversations: number;
+    messages: number;
+    isConnected: boolean;
+  }>;
 };
 
 export function fetchDashboard(): Promise<DashboardData> {

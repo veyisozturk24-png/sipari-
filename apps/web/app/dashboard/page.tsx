@@ -9,29 +9,17 @@ import OrdersTable from './orders-table';
 import NewOrderButton from './new-order-button';
 import { fetchDashboard, type DashboardData } from './dashboard-api';
 
-const channels = [
-  {
-    name: 'WhatsApp',
-    detail: '12 yeni mesaj',
-    orders: '16 sipariş',
-    icon: 'whatsapp' as AppIconName,
-    className: 'whatsapp',
-  },
-  {
-    name: 'Instagram',
-    detail: '5 yeni mesaj',
-    orders: '6 sipariş',
-    icon: 'instagram' as AppIconName,
-    className: 'instagram',
-  },
-  {
-    name: 'Web Mağaza',
-    detail: 'Tüm sistemler aktif',
-    orders: '2 sipariş',
-    icon: 'globe' as AppIconName,
-    className: 'web',
-  },
-];
+const channelPresentation: Record<string, { label: string; icon: AppIconName; className: string }> = {
+  WHATSAPP: { label: 'WhatsApp', icon: 'whatsapp', className: 'whatsapp' },
+  INSTAGRAM: { label: 'Instagram', icon: 'instagram', className: 'instagram' },
+  FACEBOOK: { label: 'Facebook', icon: 'message', className: 'web' },
+  WEB: { label: 'Web Mağaza', icon: 'globe', className: 'web' },
+  SHOPIFY: { label: 'Shopify', icon: 'globe', className: 'web' },
+  WOOCOMMERCE: { label: 'WooCommerce', icon: 'globe', className: 'web' },
+  TRENDYOL: { label: 'Trendyol', icon: 'shopping-bag', className: 'web' },
+  HEPSIBURADA: { label: 'Hepsiburada', icon: 'shopping-bag', className: 'web' },
+  MANUAL: { label: 'Manuel', icon: 'orders', className: 'web' },
+};
 
 const quickStartSteps: Array<{
   title: string;
@@ -113,6 +101,10 @@ export default function DashboardPage() {
     ? `M0,230 L${chartLine.replaceAll(' ', ' L')} L700,230 Z`
     : 'M0,230 L700,230 Z';
   const showQuickStart = dashboard !== null && dashboard.overview.totalOrders === 0;
+  const chartScale = [1, 0.75, 0.5, 0.25, 0].map((ratio) =>
+    new Intl.NumberFormat('tr-TR', { notation: 'compact', maximumFractionDigits: 1 })
+      .format(maxRevenue * ratio),
+  );
 
   return (
     <div className={styles.shell}>
@@ -136,8 +128,8 @@ export default function DashboardPage() {
           <Link href="/dashboard" className={styles.active}>
             <span><AppIcon name="layout" /></span> Genel Bakış
           </Link>
-          <Link href="/dashboard/inbox"><span><AppIcon name="inbox" /></span> Gelen Kutusu <b>17</b></Link>
-          <a href="#"><span><AppIcon name="orders" /></span> Siparişler <b>7</b></a>
+          <Link href="/dashboard/inbox"><span><AppIcon name="inbox" /></span> Gelen Kutusu</Link>
+          <Link href="/dashboard"><span><AppIcon name="orders" /></span> Siparişler</Link>
           <Link href="/dashboard/products"><span><AppIcon name="box" /></span> Ürünler</Link>
           <Link href="/dashboard/customers"><span><AppIcon name="customers" /></span> Müşteriler</Link>
           <Link href="/dashboard/products"><span><AppIcon name="stock" /></span> Stok Yönetimi</Link>
@@ -148,8 +140,7 @@ export default function DashboardPage() {
           </Link>
 
           <p>YÖNETİM</p>
-          <a href="#"><span><AppIcon name="message" /></span> Kanallar</a>
-          <a href="#"><span><AppIcon name="settings" /></span> Ayarlar</a>
+          <Link href="/dashboard/inbox"><span><AppIcon name="message" /></span> Kanallar</Link>
         </nav>
 
         <div className={styles.upgrade}>
@@ -251,11 +242,7 @@ export default function DashboardPage() {
 
             <div className={styles.chart}>
               <div className={styles.yLabels}>
-                <span>20B</span>
-                <span>15B</span>
-                <span>10B</span>
-                <span>5B</span>
-                <span>0</span>
+                {chartScale.map((label, index) => <span key={index}>{label}</span>)}
               </div>
 
               <div className={styles.chartArea}>
@@ -295,28 +282,35 @@ export default function DashboardPage() {
                 <h2>Satış kanalları</h2>
                 <p>Bağlı kanalların durumu</p>
               </div>
-              <button aria-label="Kanal seçenekleri"><AppIcon name="more" size={18} /></button>
             </div>
 
-            <div className={styles.channelList}>
-              {channels.map((channel) => (
-                <div className={styles.channel} key={channel.name}>
-                  <span className={`${styles.channelIcon} ${styles[channel.className]}`}>
-                    <AppIcon name={channel.icon} size={20} />
-                  </span>
-                  <div>
-                    <strong>{channel.name}</strong>
-                    <small>{channel.detail}</small>
-                  </div>
-                  <div className={styles.channelRight}>
-                    <strong>{channel.orders}</strong>
-                    <small><i /> Aktif</small>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {dashboard?.channels.length ? (
+              <div className={styles.channelList}>
+                {dashboard.channels.map((channel) => {
+                  const presentation = channelPresentation[channel.platform] ?? channelPresentation.MANUAL;
+                  return (
+                    <div className={styles.channel} key={`${channel.platform}-${channel.name}`}>
+                      <span className={`${styles.channelIcon} ${styles[presentation.className]}`}>
+                        <AppIcon name={presentation.icon} size={20} />
+                      </span>
+                      <div>
+                        <strong>{channel.name || presentation.label}</strong>
+                        <small>{channel.messages} mesaj · {channel.conversations} konuşma</small>
+                      </div>
+                      <div className={styles.channelRight}>
+                        <small className={channel.isConnected ? styles.connectedStatus : styles.inactiveStatus}>
+                          <i /> {channel.isConnected ? 'Bağlı' : 'Bağlı değil'}
+                        </small>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className={styles.emptyChannels}>Henüz bağlı bir satış kanalı yok.</p>
+            )}
 
-            <button className={styles.connectButton}><AppIcon name="plus" size={16} /> Yeni kanal bağla</button>
+            <Link href="/dashboard/inbox" className={styles.connectButton}><AppIcon name="plus" size={16} /> Yeni kanal bağla</Link>
           </article>
         </section>
 

@@ -733,12 +733,27 @@
   color: #059669;
 }
 
+.connectedStatus { color: #059669 !important; }
+
 .channelRight i {
   width: 5px;
   height: 5px;
   display: inline-block;
   border-radius: 50%;
   background: #10b981;
+}
+
+.inactiveStatus { color: #9a92a5 !important; }
+.inactiveStatus i { background: #a8a1b0; }
+
+.emptyChannels {
+  margin: 28px 0 19px;
+  border: 1px dashed #ddd6e7;
+  border-radius: 12px;
+  padding: 18px 14px;
+  color: #8e859a;
+  font-size: 10px;
+  text-align: center;
 }
 
 .connectButton {
@@ -756,6 +771,7 @@
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .connectButton:hover { border-color: #a78bfa; background: #f6f1ff; }
