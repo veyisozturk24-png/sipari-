@@ -139,6 +139,29 @@ export default function InboxClient() {
     messages: [],
   };
 
+  function renderConnectionForm() {
+    return (
+      <form className={styles.connectionCard} onSubmit={configureWhatsAppChannel}>
+        <div>
+          <span className={styles.connectionIcon}>WA</span>
+          <div>
+            <strong>WhatsApp numarasını bağla</strong>
+            <p>Meta’daki Phone Number ID değerini buraya yapıştır.</p>
+          </div>
+        </div>
+        <label>
+          Görünen kanal adı
+          <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Örn. Siparİş test" />
+        </label>
+        <label>
+          Phone Number ID
+          <input required value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder="Meta’dan kopyalanan numara" inputMode="numeric" />
+        </label>
+        <button disabled={isConnecting} type="submit">{isConnecting ? 'Bağlanıyor...' : 'Test numarasını bağla'}</button>
+      </form>
+    );
+  }
+
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('tr-TR');
 
@@ -326,24 +349,7 @@ export default function InboxClient() {
             </div>
 
             {(isConnectionFormOpen || channels.length === 0) && (
-              <form className={styles.connectionCard} onSubmit={configureWhatsAppChannel}>
-                <div>
-                  <span className={styles.connectionIcon}>WA</span>
-                  <div>
-                    <strong>WhatsApp numarasını bağla</strong>
-                    <p>Meta’daki Phone Number ID değerini buraya yapıştır.</p>
-                  </div>
-                </div>
-                <label>
-                  Görünen kanal adı
-                  <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Örn. Siparİş test" />
-                </label>
-                <label>
-                  Phone Number ID
-                  <input required value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder="Meta’dan kopyalanan numara" inputMode="numeric" />
-                </label>
-                <button disabled={isConnecting} type="submit">{isConnecting ? 'Bağlanıyor...' : 'Test numarasını bağla'}</button>
-              </form>
+              renderConnectionForm()
             )}
 
             <div className={styles.search}>
@@ -421,6 +427,11 @@ export default function InboxClient() {
           </aside>
 
           <section className={styles.chatPanel}>
+            {(isConnectionFormOpen || channels.length === 0) && (
+              <div className={styles.mobileConnection}>
+                {renderConnectionForm()}
+              </div>
+            )}
             <header className={styles.chatHeader}>
               <div className={styles.chatCustomer}>
                 <span>

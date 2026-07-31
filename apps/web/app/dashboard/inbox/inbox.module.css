@@ -328,6 +328,10 @@
   opacity: 0.65;
 }
 
+.mobileConnection {
+  display: none;
+}
+
 .search {
   position: relative;
   margin: 0 17px 11px;
@@ -953,6 +957,16 @@
 
   .conversationPanel {
     display: none;
+  }
+
+  .mobileConnection {
+    display: block;
+    border-bottom: 1px solid #ebe7ef;
+    background: #fff;
+  }
+
+  .mobileConnection .connectionCard {
+    margin: 12px;
   }
 
   .chatActions > button:not(.convertButton) {
