@@ -33,6 +33,38 @@ const channels = [
   },
 ];
 
+const quickStartSteps: Array<{
+  title: string;
+  detail: string;
+  href: string;
+  icon: AppIconName;
+}> = [
+  {
+    title: 'Ürünlerini ekle',
+    detail: 'Fiyat ve stok bilgini gir.',
+    href: '/dashboard/products',
+    icon: 'box',
+  },
+  {
+    title: 'Müşterini kaydet',
+    detail: 'İlk alıcının bilgilerini oluştur.',
+    href: '/dashboard/customers',
+    icon: 'customers',
+  },
+  {
+    title: 'İlk siparişini oluştur',
+    detail: 'Sipariş ve stok akışını dene.',
+    href: '/dashboard',
+    icon: 'shopping-bag',
+  },
+  {
+    title: 'Mesaj kanalını bağla',
+    detail: 'WhatsApp mesajlarını tek ekranda yönet.',
+    href: '/dashboard/inbox',
+    icon: 'whatsapp',
+  },
+];
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const user = getSession()?.user;
@@ -80,6 +112,7 @@ export default function DashboardPage() {
   const chartArea = chartPoints.length
     ? `M0,230 L${chartLine.replaceAll(' ', ' L')} L700,230 Z`
     : 'M0,230 L700,230 Z';
+  const showQuickStart = dashboard !== null && dashboard.overview.totalOrders === 0;
 
   return (
     <div className={styles.shell}>
@@ -152,6 +185,32 @@ export default function DashboardPage() {
             <NewOrderButton />
           </div>
         </header>
+
+        {showQuickStart && (
+          <section className={styles.quickStart} aria-labelledby="quick-start-title">
+            <div className={styles.quickStartIntro}>
+              <span><AppIcon name="bolt" size={17} /></span>
+              <div>
+                <p>İLK 10 DAKİKA</p>
+                <h2 id="quick-start-title">Siparİş’i kullanmaya başla</h2>
+                <small>İlk siparişini oluşturduğunda bu rehber kendiliğinden kapanır.</small>
+              </div>
+            </div>
+            <div className={styles.quickStartSteps}>
+              {quickStartSteps.map((step, index) => (
+                <Link href={step.href} key={step.title} className={styles.quickStartStep}>
+                  <span className={styles.quickStartNumber}>{index + 1}</span>
+                  <span className={styles.quickStartIcon}><AppIcon name={step.icon} size={17} /></span>
+                  <span>
+                    <strong>{step.title}</strong>
+                    <small>{step.detail}</small>
+                  </span>
+                  <AppIcon name="arrow-right" size={15} />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className={styles.statsGrid}>
           {stats.map((stat) => (
