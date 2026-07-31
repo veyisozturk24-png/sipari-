@@ -44,6 +44,13 @@ type ApiConversation = {
   lastMessageAt: string | null;
 };
 
+type ApiChannel = {
+  id: string;
+  name: string;
+  externalAccountId: string;
+  status: 'CONNECTED' | 'DISCONNECTED' | 'PENDING' | 'ERROR';
+};
+
 const quickReplies = [
   'Evet, ürün stokta mevcut.',
   'Siparişinizi hemen oluşturabilirim.',
@@ -59,6 +66,11 @@ export default function InboxClient() {
   const [toast, setToast] = useState('');
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [channels, setChannels] = useState<ApiChannel[]>([]);
+  const [isConnectionFormOpen, setIsConnectionFormOpen] = useState(false);
+  const [phoneNumberId, setPhoneNumberId] = useState('');
+  const [displayName, setDisplayName] = useState('WhatsApp');
+  const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
     if (!companyId) {
@@ -69,7 +81,10 @@ export default function InboxClient() {
     async function loadConversations() {
       try {
         setIsLoading(true);
-        const data = await apiFetch<ApiConversation[]>(`/whatsapp/conversations?companyId=${companyId}`);
+        const [data, configuredChannels] = await Promise.all([
+          apiFetch<ApiConversation[]>(`/whatsapp/conversations?companyId=${companyId}`),
+          apiFetch<ApiChannel[]>(`/whatsapp/channels?companyId=${companyId}`),
+        ]);
         const mapped = data.map((conversation) => {
           const name = conversation.customer.name;
           const lastMessage = conversation.messages.at(-1);
@@ -96,6 +111,7 @@ export default function InboxClient() {
         });
 
         setConversations(mapped);
+        setChannels(configuredChannels);
         setSelectedId((current) => current ?? mapped[0]?.id ?? null);
       } catch {
         setToast('WhatsApp konuşmaları yüklenemedi.');
@@ -168,6 +184,39 @@ export default function InboxClient() {
   function convertToOrder() {
     if (selectedConversation) {
       setIsConvertModalOpen(true);
+    }
+  }
+
+  async function configureWhatsAppChannel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!companyId || !phoneNumberId.trim()) {
+      setToast('Meta’daki Phone Number ID alanını girmen gerekiyor.');
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+      const channel = await apiFetch<ApiChannel>('/whatsapp/channels', {
+        method: 'POST',
+        body: JSON.stringify({
+          companyId,
+          phoneNumberId: phoneNumberId.trim(),
+          displayName: displayName.trim() || 'WhatsApp',
+        }),
+      });
+
+      setChannels((current) => [
+        ...current.filter((item) => item.id !== channel.id),
+        channel,
+      ]);
+      setPhoneNumberId('');
+      setIsConnectionFormOpen(false);
+      setToast('WhatsApp numarası bağlandı. Şimdi Meta webhook ayarına geçebiliriz.');
+    } catch {
+      setToast('WhatsApp numarası bağlanamadı. Oturumunu ve Meta’daki Phone Number ID değerini kontrol et.');
+    } finally {
+      setIsConnecting(false);
     }
   }
 
@@ -259,9 +308,9 @@ export default function InboxClient() {
             <p>Tüm satış kanallarındaki müşteri konuşmalarını yönet.</p>
           </div>
 
-          <button type="button">
+          <button type="button" onClick={() => setIsConnectionFormOpen((current) => !current)}>
             <i />
-            Tüm kanallar aktif
+            {channels.length > 0 ? `${channels.length} kanal bağlı` : 'WhatsApp bağla'}
           </button>
         </header>
 
@@ -270,11 +319,32 @@ export default function InboxClient() {
             <div className={styles.conversationHeader}>
               <div>
                 <h2>Mesajlar</h2>
-                <span>3 okunmamış konuşma</span>
+                <span>{conversations.length > 0 ? `${conversations.length} konuşma` : 'WhatsApp mesajlarını bağla'}</span>
               </div>
 
-              <button type="button">＋</button>
+              <button type="button" aria-label="WhatsApp bağlantısı ekle" onClick={() => setIsConnectionFormOpen(true)}>＋</button>
             </div>
+
+            {(isConnectionFormOpen || channels.length === 0) && (
+              <form className={styles.connectionCard} onSubmit={configureWhatsAppChannel}>
+                <div>
+                  <span className={styles.connectionIcon}>WA</span>
+                  <div>
+                    <strong>WhatsApp numarasını bağla</strong>
+                    <p>Meta’daki Phone Number ID değerini buraya yapıştır.</p>
+                  </div>
+                </div>
+                <label>
+                  Görünen kanal adı
+                  <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Örn. Siparİş test" />
+                </label>
+                <label>
+                  Phone Number ID
+                  <input required value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder="Meta’dan kopyalanan numara" inputMode="numeric" />
+                </label>
+                <button disabled={isConnecting} type="submit">{isConnecting ? 'Bağlanıyor...' : 'Test numarasını bağla'}</button>
+              </form>
+            )}
 
             <div className={styles.search}>
               <span>⌕</span>

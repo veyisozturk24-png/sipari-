@@ -244,6 +244,90 @@
   cursor: pointer;
 }
 
+.connectionCard {
+  display: grid;
+  gap: 10px;
+  margin: 0 13px 13px;
+  border: 1px solid #ddd6fe;
+  border-radius: 14px;
+  padding: 13px;
+  background: linear-gradient(145deg, #faf7ff, #fff);
+  box-shadow: 0 8px 18px rgba(91, 57, 146, 0.06);
+}
+
+.connectionCard > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.connectionIcon {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: #dcfce7;
+  color: #168746;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.connectionCard strong {
+  display: block;
+  color: #342a43;
+  font-size: 10px;
+}
+
+.connectionCard p {
+  margin: 3px 0 0;
+  color: #80758b;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.connectionCard label {
+  display: grid;
+  gap: 5px;
+  color: #5d516a;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.connectionCard input {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #e3ddeb;
+  border-radius: 9px;
+  padding: 0 9px;
+  outline: none;
+  background: #fff;
+  color: #31273e;
+  font-size: 9px;
+}
+
+.connectionCard input:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.16);
+}
+
+.connectionCard > button {
+  height: 35px;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.connectionCard > button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .search {
   position: relative;
   margin: 0 17px 11px;
