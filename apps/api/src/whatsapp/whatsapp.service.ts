@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  OnModuleInit,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -42,13 +43,17 @@ type WhatsAppSendResponse = {
 };
 
 @Injectable()
-export class WhatsAppService {
+export class WhatsAppService implements OnModuleInit {
   private readonly logger = new Logger(WhatsAppService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit() {
+    await this.subscribeAppToBusinessAccount();
+  }
 
   findChannels(companyId: string) {
     return this.prisma.channelConnection.findMany({
@@ -186,6 +191,35 @@ export class WhatsAppService {
     });
 
     return message;
+  }
+
+  private async subscribeAppToBusinessAccount() {
+    const accessToken = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN');
+    const businessAccountId = this.configService.get<string>('WHATSAPP_BUSINESS_ACCOUNT_ID');
+
+    if (!accessToken || !businessAccountId) {
+      this.logger.log('WhatsApp Business Account aboneliği için yapılandırma bekleniyor.');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v26.0/${businessAccountId}/subscribed_apps`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.warn(`WhatsApp Business Account aboneliği kurulamadı: ${response.status}`);
+        return;
+      }
+
+      this.logger.log('WhatsApp Business Account webhook aboneliği aktif.');
+    } catch {
+      this.logger.warn('WhatsApp Business Account aboneliği kurulurken Meta’ya ulaşılamadı.');
+    }
   }
 
   isVerifyTokenValid(token: string | undefined) {
