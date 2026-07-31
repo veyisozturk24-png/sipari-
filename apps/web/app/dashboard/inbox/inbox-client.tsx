@@ -169,6 +169,31 @@ export default function InboxClient() {
     );
   }
 
+  function renderConnectedChannels() {
+    return (
+      <div className={styles.connectedChannelCard}>
+        <div className={styles.connectedChannelHeading}>
+          <span className={styles.connectionIcon}>WA</span>
+          <div>
+            <strong>WhatsApp bağlı</strong>
+            <p>Meta test numarası Siparİş’e yönlendiriliyor.</p>
+          </div>
+          <span className={styles.connectedDot} />
+        </div>
+        {channels.map((channel) => (
+          <div key={channel.id} className={styles.channelIdentifier}>
+            <span>{channel.name}</span>
+            <strong>Phone Number ID</strong>
+            <code>{channel.externalAccountId || 'Tanımlanmadı'}</code>
+          </div>
+        ))}
+        <button type="button" onClick={() => setIsConnectionFormOpen(true)}>
+          Kimliği değiştir veya yeni numara ekle
+        </button>
+      </div>
+    );
+  }
+
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('tr-TR');
 
@@ -382,9 +407,9 @@ export default function InboxClient() {
               <button type="button" aria-label="WhatsApp bağlantısı ekle" onClick={() => setIsConnectionFormOpen(true)}>＋</button>
             </div>
 
-            {(isConnectionFormOpen || channels.length === 0) && (
-              renderConnectionForm()
-            )}
+            {isConnectionFormOpen || channels.length === 0
+              ? renderConnectionForm()
+              : renderConnectedChannels()}
 
             <div className={styles.search}>
               <span>⌕</span>
@@ -462,17 +487,9 @@ export default function InboxClient() {
 
           <section className={styles.chatPanel}>
             <div className={styles.mobileConnection}>
-              {(isConnectionFormOpen || channels.length === 0) ? renderConnectionForm() : (
-                <button
-                  type="button"
-                  className={styles.manageConnectionButton}
-                  onClick={() => setIsConnectionFormOpen(true)}
-                >
-                  <span>✓</span>
-                  WhatsApp bağlı
-                  <small>Yönet</small>
-                </button>
-              )}
+              {isConnectionFormOpen || channels.length === 0
+                ? renderConnectionForm()
+                : renderConnectedChannels()}
             </div>
             <header className={styles.chatHeader}>
               <div className={styles.chatCustomer}>

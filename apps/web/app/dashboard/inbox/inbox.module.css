@@ -328,41 +328,91 @@
   opacity: 0.65;
 }
 
-.mobileConnection {
-  display: none;
+.connectedChannelCard {
+  display: grid;
+  gap: 11px;
+  margin: 0 13px 13px;
+  border: 1px solid #c7f1d6;
+  border-radius: 14px;
+  padding: 13px;
+  background: linear-gradient(145deg, #f4fff7, #fff);
 }
 
-.manageConnectionButton {
-  width: 100%;
+.connectedChannelHeading {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.connectedChannelHeading > div { min-width: 0; flex: 1; }
+
+.connectedChannelHeading strong {
+  display: block;
+  color: #245536;
+  font-size: 10px;
+}
+
+.connectedChannelHeading p {
+  margin: 3px 0 0;
+  color: #638070;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.connectedDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+
+.channelIdentifier {
+  display: grid;
+  gap: 4px;
+  border-radius: 10px;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.channelIdentifier > span {
+  color: #465849;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.channelIdentifier > strong {
+  color: #899a8d;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.channelIdentifier code {
+  overflow-wrap: anywhere;
+  color: #197541;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.connectedChannelCard > button {
   border: 0;
-  padding: 13px 15px;
-  background: #fff;
-  color: #237247;
-  font-size: 11px;
+  padding: 2px 0;
+  background: transparent;
+  color: #6d28d9;
+  font-size: 8px;
   font-weight: 800;
   text-align: left;
   cursor: pointer;
 }
 
-.manageConnectionButton > span {
-  width: 21px;
-  height: 21px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #dcfce7;
-  color: #15803d;
-  font-size: 11px;
+.mobileConnection {
+  display: none;
 }
 
-.manageConnectionButton small {
-  margin-left: auto;
-  color: #7c3aed;
-  font-size: 10px;
-}
 
 .search {
   position: relative;
