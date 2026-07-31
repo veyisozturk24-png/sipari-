@@ -1,6 +1,9 @@
 import {
+  BadGatewayException,
+  BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -12,6 +15,7 @@ import {
 } from '../generated/prisma/enums';
 import { PrismaService } from '../database/prisma.service';
 import { ConfigureWhatsAppDto } from './dto/configure-whatsapp.dto';
+import { SendWhatsAppMessageDto } from './dto/send-whatsapp-message.dto';
 
 type WhatsAppWebhookPayload = {
   object?: string;
@@ -30,6 +34,11 @@ type WhatsAppWebhookPayload = {
       };
     }>;
   }>;
+};
+
+type WhatsAppSendResponse = {
+  messages?: Array<{ id?: string }>;
+  error?: { message?: string };
 };
 
 @Injectable()
@@ -100,6 +109,83 @@ export class WhatsAppService {
         status: ChannelStatus.CONNECTED,
       },
     });
+  }
+
+  async sendMessage(dto: SendWhatsAppMessageDto) {
+    const accessToken = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN');
+
+    if (!accessToken) {
+      throw new BadRequestException('WhatsApp mesaj anahtarı henüz Railway’e eklenmedi.');
+    }
+
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: dto.conversationId, companyId: dto.companyId },
+      include: {
+        customer: { select: { phone: true } },
+        channel: { select: { platform: true, status: true, externalAccountId: true } },
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('WhatsApp konuşması bulunamadı.');
+    }
+
+    if (
+      conversation.channel.platform !== ChannelPlatform.WHATSAPP ||
+      conversation.channel.status !== ChannelStatus.CONNECTED ||
+      !conversation.channel.externalAccountId
+    ) {
+      throw new BadRequestException('Bu konuşma için aktif bir WhatsApp kanalı yok.');
+    }
+
+    const recipient = conversation.customer.phone?.replace(/\D/g, '');
+
+    if (!recipient) {
+      throw new BadRequestException('Müşterinin WhatsApp telefon numarası bulunamadı.');
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${conversation.channel.externalAccountId}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: recipient,
+          type: 'text',
+          text: { body: dto.text.trim() },
+        }),
+      },
+    );
+
+    const payload = await response.json().catch(() => ({})) as WhatsAppSendResponse;
+
+    if (!response.ok) {
+      this.logger.error(`WhatsApp mesajı gönderilemedi: ${payload.error?.message ?? response.statusText}`);
+      throw new BadGatewayException('WhatsApp mesajı gönderilemedi. Meta erişim anahtarını ve test alıcısını kontrol et.');
+    }
+
+    const sentAt = new Date();
+    const message = await this.prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        externalId: payload.messages?.[0]?.id,
+        direction: MessageDirection.OUTBOUND,
+        type: MessageType.TEXT,
+        text: dto.text.trim(),
+        sentAt,
+      },
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { lastMessageAt: sentAt },
+    });
+
+    return message;
   }
 
   isVerifyTokenValid(token: string | undefined) {

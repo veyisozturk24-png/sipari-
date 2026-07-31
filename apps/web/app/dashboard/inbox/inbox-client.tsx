@@ -51,6 +51,13 @@ type ApiChannel = {
   status: 'CONNECTED' | 'DISCONNECTED' | 'PENDING' | 'ERROR';
 };
 
+type SentMessage = {
+  id: string;
+  text: string | null;
+  sentAt: string | null;
+  createdAt: string;
+};
+
 const quickReplies = [
   'Evet, ürün stokta mevcut.',
   'Siparişinizi hemen oluşturabilirim.',
@@ -191,17 +198,44 @@ export default function InboxClient() {
     );
   }
 
-  function sendMessage(event: FormEvent<HTMLFormElement>) {
+  async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const text = message.trim();
 
-    if (!text) {
+    if (!text || !selectedConversation || !companyId) {
+      if (!selectedConversation) {
+        setToast('Mesaj göndermek için önce bir WhatsApp konuşması seç.');
+      }
       return;
     }
 
-    setToast('Mesaj gönderme, Meta WhatsApp bağlantısı tamamlandığında açılacak.');
-    setMessage('');
+    try {
+      const sent = await apiFetch<SentMessage>('/whatsapp/messages', {
+        method: 'POST',
+        body: JSON.stringify({ companyId, conversationId: selectedConversation.id, text }),
+      });
+      const sentAt = sent.sentAt ?? sent.createdAt;
+
+      setConversations((current) => current.map((conversation) => (
+        conversation.id === selectedConversation.id
+          ? {
+              ...conversation,
+              preview: sent.text ?? text,
+              time: new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(sentAt)),
+              messages: [...conversation.messages, {
+                id: sent.id,
+                sender: 'business',
+                text: sent.text ?? text,
+                time: new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(sentAt)),
+              }],
+            }
+          : conversation
+      )));
+      setMessage('');
+    } catch {
+      setToast('Mesaj gönderilemedi. Railway’de WhatsApp erişim anahtarını ve Meta test alıcısını kontrol et.');
+    }
   }
 
   function convertToOrder() {
