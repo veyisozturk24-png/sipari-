@@ -427,11 +427,19 @@ export default function InboxClient() {
           </aside>
 
           <section className={styles.chatPanel}>
-            {(isConnectionFormOpen || channels.length === 0) && (
-              <div className={styles.mobileConnection}>
-                {renderConnectionForm()}
-              </div>
-            )}
+            <div className={styles.mobileConnection}>
+              {(isConnectionFormOpen || channels.length === 0) ? renderConnectionForm() : (
+                <button
+                  type="button"
+                  className={styles.manageConnectionButton}
+                  onClick={() => setIsConnectionFormOpen(true)}
+                >
+                  <span>✓</span>
+                  WhatsApp bağlı
+                  <small>Yönet</small>
+                </button>
+              )}
+            </div>
             <header className={styles.chatHeader}>
               <div className={styles.chatCustomer}>
                 <span>
