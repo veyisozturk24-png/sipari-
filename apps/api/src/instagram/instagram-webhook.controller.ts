@@ -1,8 +1,10 @@
-import { Body, Controller, ForbiddenException, Get, Header, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Logger, Post, Query, Req } from '@nestjs/common';
 import { InstagramService } from './instagram.service';
 
 @Controller('webhooks/instagram')
 export class InstagramWebhookController {
+  private readonly logger = new Logger(InstagramWebhookController.name);
+
   constructor(private readonly instagram: InstagramService) {}
 
   @Get()
@@ -16,9 +18,12 @@ export class InstagramWebhookController {
 
   @Post()
   receive(@Body() _payload: unknown, @Req() request: { rawBody?: Buffer; headers: { 'x-hub-signature-256'?: string } }) {
+    this.logger.log('Instagram webhook isteği alındı.');
     if (!this.instagram.isSignatureValid(request.rawBody, request.headers['x-hub-signature-256'])) {
+      this.logger.warn('Instagram webhook imzası doğrulanamadı.');
       throw new ForbiddenException('Instagram webhook imzası geçersiz.');
     }
+    this.logger.log('Instagram webhook isteği doğrulandı.');
     return { received: true };
   }
 }
