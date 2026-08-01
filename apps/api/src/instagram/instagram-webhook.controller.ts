@@ -17,12 +17,13 @@ export class InstagramWebhookController {
   }
 
   @Post()
-  receive(@Body() _payload: unknown, @Req() request: { rawBody?: Buffer; headers: { 'x-hub-signature-256'?: string } }) {
+  async receive(@Body() payload: unknown, @Req() request: { rawBody?: Buffer; headers: { 'x-hub-signature-256'?: string } }) {
     this.logger.log('Instagram webhook isteği alındı.');
     if (!this.instagram.isSignatureValid(request.rawBody, request.headers['x-hub-signature-256'])) {
       this.logger.warn('Instagram webhook imzası doğrulanamadı.');
       throw new ForbiddenException('Instagram webhook imzası geçersiz.');
     }
+    await this.instagram.receiveWebhook(payload);
     this.logger.log('Instagram webhook isteği doğrulandı.');
     return { received: true };
   }

@@ -295,7 +295,8 @@
   font-weight: 800;
 }
 
-.connectionCard input {
+.connectionCard input,
+.connectionCard select {
   width: 100%;
   height: 34px;
   border: 1px solid #e3ddeb;
@@ -310,6 +311,12 @@
 .connectionCard input:focus {
   border-color: #a78bfa;
   box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.16);
+}
+
+.connectionCard select:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.16);
+  outline: none;
 }
 
 .connectionCard > button {

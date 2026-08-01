@@ -8,6 +8,7 @@ import styles from './inbox.module.css';
 import ConvertOrderModal from './convert-order-modal';
 
 type Channel = 'WhatsApp' | 'Instagram' | 'Facebook';
+type ConnectableChannel = 'WHATSAPP' | 'INSTAGRAM';
 
 type Message = {
   id: string;
@@ -39,7 +40,7 @@ type ApiConversation = {
     phone: string | null;
     orders: Array<{ orderNumber: string; totalAmount: number | string; createdAt: string }>;
   };
-  channel: { name: string; platform: 'WHATSAPP' };
+  channel: { name: string; platform: 'WHATSAPP' | 'INSTAGRAM' };
   messages: Array<{
     id: string;
     direction: 'INBOUND' | 'OUTBOUND';
@@ -53,8 +54,9 @@ type ApiConversation = {
 type ApiChannel = {
   id: string;
   name: string;
-  externalAccountId: string;
-  status: 'CONNECTED' | 'DISCONNECTED' | 'PENDING' | 'ERROR';
+  platform: ConnectableChannel;
+  externalAccountId: string | null;
+  status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
 };
 
 type SentMessage = {
@@ -82,7 +84,8 @@ export default function InboxClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [channels, setChannels] = useState<ApiChannel[]>([]);
   const [isConnectionFormOpen, setIsConnectionFormOpen] = useState(false);
-  const [phoneNumberId, setPhoneNumberId] = useState('');
+  const [connectionPlatform, setConnectionPlatform] = useState<ConnectableChannel>('WHATSAPP');
+  const [channelIdentifier, setChannelIdentifier] = useState('');
   const [displayName, setDisplayName] = useState('WhatsApp');
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -95,11 +98,13 @@ export default function InboxClient() {
     async function loadConversations() {
       try {
         setIsLoading(true);
-        const [data, configuredChannels] = await Promise.all([
+        const [whatsAppConversations, whatsAppChannels, instagramConversations, instagramChannels] = await Promise.all([
           apiFetch<ApiConversation[]>(`/whatsapp/conversations?companyId=${companyId}`),
           apiFetch<ApiChannel[]>(`/whatsapp/channels?companyId=${companyId}`),
+          apiFetch<ApiConversation[]>(`/instagram/conversations?companyId=${companyId}`),
+          apiFetch<ApiChannel[]>(`/instagram/channels?companyId=${companyId}`),
         ]);
-        const mapped = data.map((conversation) => {
+        const mapped = [...whatsAppConversations, ...instagramConversations].map((conversation) => {
           const name = conversation.customer.name;
           const lastMessage = conversation.messages.at(-1);
           const lastMessageAt = conversation.lastMessageAt ?? lastMessage?.sentAt ?? lastMessage?.createdAt;
@@ -110,7 +115,7 @@ export default function InboxClient() {
             customer: name,
             initials: name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('tr-TR'),
             phone: conversation.customer.phone ?? 'Telefon bilgisi yok',
-            channel: 'WhatsApp' as const,
+            channel: conversation.channel.platform === 'INSTAGRAM' ? 'Instagram' as const : 'WhatsApp' as const,
             preview: lastMessage?.text ?? 'Medya veya sistem mesajı',
             time: lastMessageAt ? new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastMessageAt)) : '',
             unread: 0,
@@ -130,10 +135,10 @@ export default function InboxClient() {
         });
 
         setConversations(mapped);
-        setChannels(configuredChannels);
+        setChannels([...whatsAppChannels, ...instagramChannels]);
         setSelectedId((current) => current ?? mapped[0]?.id ?? null);
       } catch {
-        setToast('WhatsApp konuşmaları yüklenemedi.');
+        setToast('Kanal konuşmaları yüklenemedi.');
       } finally {
         setIsLoading(false);
       }
@@ -164,23 +169,38 @@ export default function InboxClient() {
 
   function renderConnectionForm() {
     return (
-      <form className={styles.connectionCard} onSubmit={configureWhatsAppChannel}>
+      <form className={styles.connectionCard} onSubmit={configureChannel}>
         <div>
-          <span className={styles.connectionIcon}>WA</span>
+          <span className={styles.connectionIcon}>{connectionPlatform === 'INSTAGRAM' ? 'IG' : 'WA'}</span>
           <div>
-            <strong>WhatsApp numarasını bağla</strong>
-            <p>Meta’daki Phone Number ID değerini buraya yapıştır.</p>
+            <strong>{connectionPlatform === 'INSTAGRAM' ? 'Instagram hesabını bağla' : 'WhatsApp numarasını bağla'}</strong>
+            <p>{connectionPlatform === 'INSTAGRAM' ? 'Meta’daki Instagram Account ID değerini buraya yapıştır.' : 'Meta’daki Phone Number ID değerini buraya yapıştır.'}</p>
           </div>
         </div>
+        <label>
+          Kanal türü
+          <select
+            value={connectionPlatform}
+            onChange={(event) => {
+              const platform = event.target.value as ConnectableChannel;
+              setConnectionPlatform(platform);
+              setDisplayName(platform === 'INSTAGRAM' ? 'Instagram' : 'WhatsApp');
+              setChannelIdentifier('');
+            }}
+          >
+            <option value="WHATSAPP">WhatsApp</option>
+            <option value="INSTAGRAM">Instagram</option>
+          </select>
+        </label>
         <label>
           Görünen kanal adı
           <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Örn. Siparİş test" />
         </label>
         <label>
-          Phone Number ID
-          <input required value={phoneNumberId} onChange={(event) => setPhoneNumberId(event.target.value)} placeholder="Meta’dan kopyalanan numara" inputMode="numeric" />
+          {connectionPlatform === 'INSTAGRAM' ? 'Instagram Account ID' : 'Phone Number ID'}
+          <input required value={channelIdentifier} onChange={(event) => setChannelIdentifier(event.target.value)} placeholder="Meta’dan kopyalanan kimlik" inputMode="numeric" />
         </label>
-        <button disabled={isConnecting} type="submit">{isConnecting ? 'Bağlanıyor...' : 'Test numarasını bağla'}</button>
+        <button disabled={isConnecting} type="submit">{isConnecting ? 'Bağlanıyor...' : connectionPlatform === 'INSTAGRAM' ? 'Instagram hesabını bağla' : 'Test numarasını bağla'}</button>
       </form>
     );
   }
@@ -189,17 +209,17 @@ export default function InboxClient() {
     return (
       <div className={styles.connectedChannelCard}>
         <div className={styles.connectedChannelHeading}>
-          <span className={styles.connectionIcon}>WA</span>
+          <span className={styles.connectionIcon}>✓</span>
           <div>
-            <strong>WhatsApp bağlı</strong>
-            <p>Meta test numarası Siparİş’e yönlendiriliyor.</p>
+            <strong>{channels.length} kanal bağlı</strong>
+            <p>Bağlı kanallardaki müşteri konuşmaları burada görünür.</p>
           </div>
           <span className={styles.connectedDot} />
         </div>
         {channels.map((channel) => (
           <div key={channel.id} className={styles.channelIdentifier}>
             <span>{channel.name}</span>
-            <strong>Phone Number ID</strong>
+            <strong>{channel.platform === 'INSTAGRAM' ? 'Instagram Account ID' : 'Phone Number ID'}</strong>
             <code>{channel.externalAccountId || 'Tanımlanmadı'}</code>
           </div>
         ))}
@@ -246,13 +266,13 @@ export default function InboxClient() {
 
     if (!text || !selectedConversation || !companyId) {
       if (!selectedConversation) {
-        setToast('Mesaj göndermek için önce bir WhatsApp konuşması seç.');
+        setToast('Mesaj göndermek için önce bir konuşma seç.');
       }
       return;
     }
 
     try {
-      const sent = await apiFetch<SentMessage>('/whatsapp/messages', {
+      const sent = await apiFetch<SentMessage>(selectedConversation.channel === 'Instagram' ? '/instagram/messages' : '/whatsapp/messages', {
         method: 'POST',
         body: JSON.stringify({ companyId, conversationId: selectedConversation.id, text }),
       });
@@ -275,7 +295,7 @@ export default function InboxClient() {
       )));
       setMessage('');
     } catch {
-      setToast('Mesaj gönderilemedi. Railway’de WhatsApp erişim anahtarını ve Meta test alıcısını kontrol et.');
+      setToast(`${selectedConversation.channel} mesajı gönderilemedi. Railway’deki erişim anahtarını ve Meta ayarlarını kontrol et.`);
     }
   }
 
@@ -285,22 +305,23 @@ export default function InboxClient() {
     }
   }
 
-  async function configureWhatsAppChannel(event: FormEvent<HTMLFormElement>) {
+  async function configureChannel(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!companyId || !phoneNumberId.trim()) {
-      setToast('Meta’daki Phone Number ID alanını girmen gerekiyor.');
+    if (!companyId || !channelIdentifier.trim()) {
+      setToast(connectionPlatform === 'INSTAGRAM' ? 'Meta’daki Instagram Account ID alanını girmen gerekiyor.' : 'Meta’daki Phone Number ID alanını girmen gerekiyor.');
       return;
     }
 
     try {
       setIsConnecting(true);
-      const channel = await apiFetch<ApiChannel>('/whatsapp/channels', {
+      const isInstagram = connectionPlatform === 'INSTAGRAM';
+      const channel = await apiFetch<ApiChannel>(isInstagram ? '/instagram/channels' : '/whatsapp/channels', {
         method: 'POST',
         body: JSON.stringify({
           companyId,
-          phoneNumberId: phoneNumberId.trim(),
-          displayName: displayName.trim() || 'WhatsApp',
+          ...(isInstagram ? { instagramAccountId: channelIdentifier.trim() } : { phoneNumberId: channelIdentifier.trim() }),
+          displayName: displayName.trim() || (isInstagram ? 'Instagram' : 'WhatsApp'),
         }),
       });
 
@@ -308,11 +329,11 @@ export default function InboxClient() {
         ...current.filter((item) => item.id !== channel.id),
         channel,
       ]);
-      setPhoneNumberId('');
+      setChannelIdentifier('');
       setIsConnectionFormOpen(false);
-      setToast('WhatsApp numarası bağlandı. Şimdi Meta webhook ayarına geçebiliriz.');
+      setToast(isInstagram ? 'Instagram hesabı doğrulanıp bağlandı.' : 'WhatsApp numarası bağlandı.');
     } catch {
-      setToast('WhatsApp numarası bağlanamadı. Oturumunu ve Meta’daki Phone Number ID değerini kontrol et.');
+      setToast(connectionPlatform === 'INSTAGRAM' ? 'Instagram hesabı bağlanamadı. Railway erişim anahtarını ve Instagram Account ID değerini kontrol et.' : 'WhatsApp numarası bağlanamadı. Oturumunu ve Meta’daki Phone Number ID değerini kontrol et.');
     } finally {
       setIsConnecting(false);
     }
@@ -402,7 +423,7 @@ export default function InboxClient() {
 
           <button type="button" onClick={() => setIsConnectionFormOpen((current) => !current)}>
             <i />
-            {channels.length > 0 ? `${channels.length} kanal bağlı` : 'WhatsApp bağla'}
+            {channels.length > 0 ? `${channels.length} kanal bağlı` : 'Kanal bağla'}
           </button>
         </header>
 
@@ -411,10 +432,10 @@ export default function InboxClient() {
             <div className={styles.conversationHeader}>
               <div>
                 <h2>Mesajlar</h2>
-                <span>{conversations.length > 0 ? `${conversations.length} konuşma` : 'WhatsApp mesajlarını bağla'}</span>
+                <span>{conversations.length > 0 ? `${conversations.length} konuşma` : 'Mesaj kanalını bağla'}</span>
               </div>
 
-              <button type="button" aria-label="WhatsApp bağlantısı ekle" onClick={() => setIsConnectionFormOpen(true)}>＋</button>
+              <button type="button" aria-label="Kanal bağlantısı ekle" onClick={() => setIsConnectionFormOpen(true)}>＋</button>
             </div>
 
             {isConnectionFormOpen || channels.length === 0
@@ -561,7 +582,7 @@ export default function InboxClient() {
               ))}
 
               {!selectedConversation && (
-                <div className={styles.emptySearch}>WhatsApp numaranızı Meta üzerinden bağladığınızda müşterilerden gelen mesajlar burada görünecek.</div>
+                <div className={styles.emptySearch}>WhatsApp veya Instagram hesabınızı Meta üzerinden bağladığınızda müşterilerden gelen mesajlar burada görünecek.</div>
               )}
             </div>
 
