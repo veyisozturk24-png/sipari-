@@ -282,7 +282,7 @@ export class InstagramService {
 
   private async getProfile(accountId: string, accessToken: string) {
     const response = await fetch(
-      `https://graph.instagram.com/v25.0/${accountId}?fields=id,username`,
+      'https://graph.instagram.com/v25.0/me?fields=id,username',
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     const payload = await response.json().catch(() => ({})) as InstagramProfileResponse;
