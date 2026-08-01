@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import { getActiveCompanyId } from '@/lib/auth';
+import { getActiveCompanyId, getSession } from '@/lib/auth';
 import styles from './inbox.module.css';
 import ConvertOrderModal from './convert-order-modal';
 
@@ -28,11 +28,17 @@ type Conversation = {
   unread: number;
   online: boolean;
   messages: Message[];
+  orders: Array<{ orderNumber: string; totalAmount: number; createdAt: string }>;
 };
 
 type ApiConversation = {
   id: string;
-  customer: { id: string; name: string; phone: string | null };
+  customer: {
+    id: string;
+    name: string;
+    phone: string | null;
+    orders: Array<{ orderNumber: string; totalAmount: number | string; createdAt: string }>;
+  };
   channel: { name: string; platform: 'WHATSAPP' };
   messages: Array<{
     id: string;
@@ -66,6 +72,7 @@ const quickReplies = [
 
 export default function InboxClient() {
   const companyId = getActiveCompanyId();
+  const user = getSession()?.user;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -114,6 +121,11 @@ export default function InboxClient() {
               text: item.text ?? 'Medya veya sistem mesajı',
               time: new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(item.sentAt ?? item.createdAt)),
             })),
+            orders: conversation.customer.orders.map((order) => ({
+              orderNumber: order.orderNumber,
+              totalAmount: Number(order.totalAmount),
+              createdAt: order.createdAt,
+            })),
           };
         });
 
@@ -144,7 +156,11 @@ export default function InboxClient() {
     unread: 0,
     online: false,
     messages: [],
+    orders: [],
   };
+  const customerTotal = displayConversation.orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const latestCustomerOrder = displayConversation.orders[0] ?? null;
+  const userInitials = (user?.name ?? 'K').split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('tr-TR');
 
   function renderConnectionForm() {
     return (
@@ -313,11 +329,11 @@ export default function InboxClient() {
         </Link>
 
         <div className={styles.workspace}>
-          <span>VM</span>
+          <span>{userInitials}</span>
 
           <div>
-            <strong>Veyis Moda</strong>
-            <small>Yönetici hesabı</small>
+            <strong>{user?.companyMemberships[0]?.company.name ?? 'İşletme'}</strong>
+            <small>{user?.companyMemberships[0]?.role ?? 'Kullanıcı'} hesabı</small>
           </div>
         </div>
 
@@ -332,7 +348,6 @@ export default function InboxClient() {
           <Link href="/dashboard/inbox" className={styles.active}>
             <span>💬</span>
             Gelen Kutusu
-            <b>3</b>
           </Link>
 
           <Link href="/dashboard">
@@ -362,23 +377,18 @@ export default function InboxClient() {
 
           <p>YÖNETİM</p>
 
-          <a href="#">
+          <Link href="/dashboard/inbox">
             <span>⌁</span>
             Kanallar
-          </a>
-
-          <a href="#">
-            <span>⚙</span>
-            Ayarlar
-          </a>
+          </Link>
         </nav>
 
         <div className={styles.profile}>
-          <span>VÖ</span>
+          <span>{userInitials}</span>
 
           <div>
-            <strong>Veyis Öztürk</strong>
-            <small>veyis@siparis.is</small>
+            <strong>{user?.name ?? 'Kullanıcı'}</strong>
+            <small>{user?.email ?? ''}</small>
           </div>
         </div>
       </aside>
@@ -601,11 +611,6 @@ export default function InboxClient() {
               <h3>{displayConversation.customer}</h3>
               <p>{displayConversation.phone}</p>
 
-              <div className={styles.customerButtons}>
-                <button type="button">☎</button>
-                <button type="button">✉</button>
-                <button type="button">⋯</button>
-              </div>
             </div>
 
             <section className={styles.infoSection}>
@@ -625,51 +630,37 @@ export default function InboxClient() {
                   <dd>{displayConversation.phone}</dd>
                 </div>
 
-                <div>
-                  <dt>Konum</dt>
-                  <dd>İstanbul, Türkiye</dd>
-                </div>
               </dl>
             </section>
 
             <section className={styles.infoSection}>
               <div className={styles.infoHeading}>
                 <h4>Sipariş özeti</h4>
-                <button type="button">Tümünü gör</button>
               </div>
 
               <div className={styles.orderSummary}>
                 <div>
                   <span>Toplam sipariş</span>
-                  <strong>3</strong>
+                  <strong>{displayConversation.orders.length}</strong>
                 </div>
 
                 <div>
                   <span>Toplam harcama</span>
-                  <strong>₺3.480</strong>
+                  <strong>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(customerTotal)}</strong>
                 </div>
               </div>
 
-              <div className={styles.lastOrder}>
-                <div>
-                  <span>#SP-1048</span>
-                  <small>Bugün</small>
+              {latestCustomerOrder ? (
+                <div className={styles.lastOrder}>
+                  <div>
+                    <span>{latestCustomerOrder.orderNumber}</span>
+                    <small>{new Date(latestCustomerOrder.createdAt).toLocaleDateString('tr-TR')}</small>
+                  </div>
+                  <strong>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(latestCustomerOrder.totalAmount)}</strong>
                 </div>
-
-                <strong>₺1.240</strong>
-              </div>
-            </section>
-
-            <section className={styles.infoSection}>
-              <div className={styles.infoHeading}>
-                <h4>Etiketler</h4>
-                <button type="button">＋</button>
-              </div>
-
-              <div className={styles.tags}>
-                <span>VIP müşteri</span>
-                <span>WhatsApp</span>
-              </div>
+              ) : (
+                <p className={styles.noOrders}>Bu müşteri için henüz sipariş yok.</p>
+              )}
             </section>
           </aside>
         </section>

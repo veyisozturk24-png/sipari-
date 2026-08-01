@@ -69,7 +69,17 @@ export class WhatsAppService implements OnModuleInit {
         channel: { platform: ChannelPlatform.WHATSAPP },
       },
       include: {
-        customer: { select: { id: true, name: true, phone: true } },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            orders: {
+              select: { orderNumber: true, totalAmount: true, createdAt: true },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
         channel: { select: { id: true, name: true, platform: true } },
         messages: {
           orderBy: [{ sentAt: 'asc' }, { createdAt: 'asc' }],

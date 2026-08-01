@@ -950,6 +950,12 @@
   font-size: 10px;
 }
 
+.noOrders {
+  margin: 10px 0 0;
+  color: #978fa1;
+  font-size: 9px;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
