@@ -87,14 +87,14 @@ export class InstagramService {
   }
 
   async configureChannel(dto: ConfigureInstagramDto) {
-    const instagramAccountId = dto.instagramAccountId.trim();
     const token = this.config.get<string>('INSTAGRAM_ACCESS_TOKEN');
 
     if (!token) {
       throw new BadRequestException('Instagram erişim anahtarı henüz Railway’e eklenmedi.');
     }
 
-    const profile = await this.getProfile(instagramAccountId, token);
+    const profile = await this.getProfile(token);
+    const instagramAccountId = profile.id;
     const name = dto.displayName.trim() || profile.username || 'Instagram';
     const existing = await this.prisma.channelConnection.findFirst({
       where: {
@@ -280,13 +280,13 @@ export class InstagramService {
     }
   }
 
-  private async getProfile(accountId: string, accessToken: string) {
+  private async getProfile(accessToken: string) {
     const response = await fetch(
       'https://graph.instagram.com/v25.0/me?fields=id,username',
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     const payload = await response.json().catch(() => ({})) as InstagramProfileResponse;
-    if (!response.ok || payload.id !== accountId) {
+    if (!response.ok || !payload.id) {
       this.logger.warn(`Instagram hesabı doğrulanamadı: ${payload.error?.message ?? response.statusText}`);
       throw new BadGatewayException('Instagram hesabı doğrulanamadı. Railway erişim anahtarını ve Instagram Account ID değerini kontrol et.');
     }
