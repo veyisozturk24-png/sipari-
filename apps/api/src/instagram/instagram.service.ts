@@ -94,7 +94,7 @@ export class InstagramService {
     }
 
     const profile = await this.getProfile(token);
-    const instagramAccountId = profile.id;
+    const instagramAccountId = dto.instagramAccountId.trim();
     const name = dto.displayName.trim() || profile.username || 'Instagram';
     const existing = await this.prisma.channelConnection.findFirst({
       where: {
@@ -286,7 +286,7 @@ export class InstagramService {
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     const payload = await response.json().catch(() => ({})) as InstagramProfileResponse;
-    if (!response.ok || !payload.id) {
+    if (!response.ok) {
       this.logger.warn(`Instagram hesabı doğrulanamadı: ${payload.error?.message ?? response.statusText}`);
       throw new BadGatewayException('Instagram hesabı doğrulanamadı. Railway erişim anahtarını ve Instagram Account ID değerini kontrol et.');
     }
