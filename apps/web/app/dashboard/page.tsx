@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getSession } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { clearSession, getSession } from '@/lib/auth';
 import AppIcon, { type AppIconName } from '@/components/app-icon';
 import styles from './dashboard.module.css';
 import OrdersTable from './orders-table';
@@ -54,8 +55,15 @@ const quickStartSteps: Array<{
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const user = getSession()?.user;
+
+  function signOut() {
+    clearSession();
+    router.replace('/giris');
+  }
 
   useEffect(() => {
     const loadDashboard = async () => setDashboard(await fetchDashboard());
@@ -156,7 +164,23 @@ export default function DashboardPage() {
             <strong>{user?.name ?? 'Kullanıcı'}</strong>
             <small>{user?.email ?? ''}</small>
           </div>
-          <AppIcon name="more" size={18} className={styles.profileMenu} />
+          <button
+            type="button"
+            className={styles.profileMenu}
+            aria-label="Hesap menüsü"
+            aria-expanded={accountMenuOpen}
+            onClick={() => setAccountMenuOpen((open) => !open)}
+          >
+            <AppIcon name="more" size={18} />
+          </button>
+          {accountMenuOpen && (
+            <div className={styles.accountMenu}>
+              <p>Hesap</p>
+              <strong>{user?.name ?? 'Kullanıcı'}</strong>
+              <small>{user?.email ?? ''}</small>
+              <button type="button" onClick={signOut}>Güvenli çıkış yap</button>
+            </div>
+          )}
         </div>
       </aside>
 
