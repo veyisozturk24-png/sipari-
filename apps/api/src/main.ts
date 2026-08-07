@@ -5,10 +5,17 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
-  const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+  const configuredCorsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const corsOrigins = Array.from(
+    new Set([
+      ...configuredCorsOrigins,
+      'https://siparisyonetim.com',
+      'https://www.siparisyonetim.com',
+    ]),
+  );
 
   app.enableCors({
     origin: corsOrigins,
