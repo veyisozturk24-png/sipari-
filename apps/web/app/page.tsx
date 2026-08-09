@@ -1,5 +1,6 @@
 
 import AppIcon, { type AppIconName } from "@/components/app-icon";
+import PilotDemoFlow from "@/components/pilot-demo-flow";
 
 const features = [
   {
@@ -127,7 +128,7 @@ export default function Home() {
               </a>
 
               <a
-                href="#demo"
+                href="#pilot-demo"
               className="rounded-xl border border-slate-300 bg-white/80 px-7 py-4 text-center font-bold text-slate-800 transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
               >
                 Demo ekranını inceleyin
@@ -231,6 +232,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <PilotDemoFlow />
 
       <section id="ozellikler" className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-6">
