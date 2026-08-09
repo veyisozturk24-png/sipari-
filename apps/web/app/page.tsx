@@ -3,9 +3,9 @@ import AppIcon, { type AppIconName } from "@/components/app-icon";
 
 const features = [
   {
-    title: "Tüm kanallar tek panelde",
+    title: "Tüm satış operasyonu tek panelde",
     description:
-      "WhatsApp, Instagram, Facebook ve web sitesi siparişlerini tek ekrandan yönetin.",
+      "Manuel girilen ve bağlanan kanallardan gelen siparişleri aynı çalışma alanında yönetin.",
     icon: "inbox" as AppIconName,
     color: "bg-violet-100 text-violet-700",
   },
@@ -38,17 +38,17 @@ const features = [
     color: "bg-emerald-100 text-emerald-700",
   },
   {
-    title: "Yapay zekâ desteği",
+    title: "Hızlı sipariş kaydı",
     description:
-      "Mesajlardan ürün, renk, beden ve adet bilgilerini otomatik olarak çıkarın.",
+      "Müşteri, ürün, adet ve teslimat bilgisini tek akışta siparişe dönüştürün.",
     icon: "chart" as AppIconName,
     color: "bg-rose-100 text-rose-700",
   },
 ];
 
 const steps = [
-  "Satış hesaplarınızı bağlayın.",
-  "Mesajları tek gelen kutusunda görün.",
+  "Ürünlerinizi ve müşterilerinizi ekleyin.",
+  "Siparişlerinizi tek gelen kutusunda toplayın.",
   "Konuşmadan sipariş oluşturun.",
   "Stok, ödeme ve kargo durumunu yönetin.",
 ];
@@ -114,8 +114,8 @@ export default function Home() {
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
-              WhatsApp, Instagram, Facebook ve web sitenizden gelen
-              konuşmaları; sipariş, stok, müşteri ve kargo süreçlerine bağlayın.
+              Sosyal medya ve web üzerinden aldığınız siparişleri; müşteri,
+              stok ve kargo süreçleriyle tek çalışma alanında yönetin.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -141,6 +141,12 @@ export default function Home() {
               </a>
             </p>
 
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
+              Pilot aşamasında WhatsApp ve Instagram bağlantılarını işletmenizin
+              hesabına göre birlikte kuruyoruz. Bağlantı tamamlanana kadar
+              sipariş ve kargo akışını panelden hemen kullanabilirsiniz.
+            </p>
+
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-slate-600">
               {['Ücretsiz kurulum desteği', 'Kredi kartı gerekmez', 'İlk işletmelere özel koşullar'].map((item) => <span key={item} className="inline-flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-100 text-emerald-700"><AppIcon name="check" size={13} strokeWidth={2.5} /></span>{item}</span>)}
             </div>
@@ -154,20 +160,20 @@ export default function Home() {
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-white">
                 <div>
                   <p className="text-sm text-slate-400">Siparİş</p>
-                  <p className="font-bold">Gelen Kutusu</p>
+                  <p className="font-bold">Örnek çalışma alanı</p>
                 </div>
 
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> 12 yeni mesaj
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Demo görünümü
                 </span>
               </div>
 
               <div className="grid gap-4 p-5 md:grid-cols-[180px_1fr]">
                 <div className="space-y-2">
                   {[
-                    ["Ayşe Kaya", "WhatsApp"],
-                    ["Elif Yılmaz", "Instagram"],
-                    ["Merve Ak", "Facebook"],
+                    ["Müşteri mesajı", "WhatsApp"],
+                    ["Yeni talep", "Instagram"],
+                    ["Panel siparişi", "Web"],
                   ].map(([name, channel], index) => (
                     <div
                       key={name}
@@ -184,7 +190,7 @@ export default function Home() {
                 </div>
 
                 <div className="rounded-xl bg-white p-5 text-slate-950">
-                  <p className="text-sm font-bold">Ayşe Kaya</p>
+                  <p className="text-sm font-bold">Yeni müşteri talebi</p>
 
                   <div className="mt-5 rounded-xl bg-slate-100 p-4 text-sm">
                     Siyah elbisenin 38 bedeninden iki tane istiyorum.
@@ -192,7 +198,7 @@ export default function Home() {
 
                   <div className="mt-5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-orange-50 p-4">
                     <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-violet-700">
-                      <AppIcon name="sparkles" size={15} /> Yapay zekâ sipariş önerisi
+                      <AppIcon name="sparkles" size={15} /> Sipariş taslağı
                     </p>
 
                     <div className="mt-4 grid grid-cols-3 gap-3">
@@ -216,7 +222,7 @@ export default function Home() {
                       type="button"
                       className="mt-4 w-full rounded-xl bg-gradient-to-r from-violet-700 to-orange-500 px-4 py-3 text-sm font-black text-white"
                     >
-                      Sipariş oluştur
+                      Taslağı incele
                     </button>
                   </div>
                 </div>
@@ -308,14 +314,14 @@ export default function Home() {
               </h2>
 
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-                Pilot programa katılın, ücretsiz kurulum desteği alın ve
-                Siparİş’in gelişimine yön verin.
+                İhtiyacınızı birlikte değerlendirelim. Uygun işletmelerle
+                kurulum, test ve geri bildirim sürecini birebir yürütüyoruz.
               </p>
 
               <div className="mt-8 space-y-3 text-sm text-slate-300">
                 <p>✓ Ücretsiz ihtiyaç analizi</p>
-                <p>✓ Kurulum ve başlangıç desteği</p>
-                <p>✓ İlk işletmelere özel fiyat avantajı</p>
+                <p>✓ Ürün, müşteri ve sipariş kurulumu desteği</p>
+                <p>✓ WhatsApp / Instagram bağlantısı için teknik yönlendirme</p>
               </div>
             </div>
 
@@ -344,7 +350,7 @@ export default function Home() {
               <input
                 type="hidden"
                 name="redirect"
-                value="https://sipari-web-psi.vercel.app/tesekkur"
+                value="https://www.siparisyonetim.com/tesekkur"
               />
               <input
                 type="checkbox"
@@ -398,6 +404,18 @@ export default function Home() {
                 </label>
 
                 <label className="block">
+                  <span className="text-sm font-bold">E-posta</span>
+
+                  <input
+                    required
+                    type="email"
+                    name="email"
+                    placeholder="ornek@isletme.com"
+                    className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+                  />
+                </label>
+
+                <label className="block">
                   <span className="text-sm font-bold">
                     Sipariş aldığınız kanal
                   </span>
@@ -418,6 +436,7 @@ export default function Home() {
                     <option value="Birden fazla kanal">
                       Birden fazla kanal
                     </option>
+                    <option value="Henüz başlamadım">Henüz başlamadım</option>
                   </select>
                 </label>
 
@@ -448,6 +467,11 @@ export default function Home() {
                     <a href="/kvkk" target="_blank" className="font-bold text-violet-700 underline">KVKK Aydınlatma Metni</a>
                     {"’ni okudum; başvurumun değerlendirilmesi kapsamında bilgilerimin işlenmesi hakkında bilgilendirildim."}
                   </span>
+                </label>
+
+                <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                  <input type="checkbox" name="contact_permission" className="mt-1 h-4 w-4 accent-violet-700" />
+                  <span>Başvurumla ilgili telefon veya e-posta yoluyla benimle iletişime geçilmesini kabul ediyorum.</span>
                 </label>
 
                 <button

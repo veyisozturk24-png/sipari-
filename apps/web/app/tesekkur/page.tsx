@@ -17,8 +17,8 @@ export default function ThankYouPage() {
         </h1>
 
         <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-slate-300">
-          İşletmenizi ve ihtiyaçlarınızı değerlendirdikten sonra sizinle
-          iletişime geçeceğiz.
+          İşletmenizi ve ihtiyacınızı değerlendireceğiz. Uygun olduğunda
+          verdiğiniz iletişim bilgileri üzerinden size döneceğiz.
         </p>
 
         <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
@@ -30,7 +30,7 @@ export default function ThankYouPage() {
           </Link>
 
           <a
-            href="mailto:iletisim@siparis.app"
+            href="mailto:veyisozturk24@gmail.com"
             className="rounded-xl border border-white/20 px-7 py-4 font-black text-white"
           >
             Bize ulaşın
