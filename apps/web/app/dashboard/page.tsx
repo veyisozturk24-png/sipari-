@@ -58,6 +58,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [salesPeriod, setSalesPeriod] = useState<7 | 30>(7);
+  const [currentHour, setCurrentHour] = useState<number | null>(null);
   const user = getSession()?.user;
 
   function signOut() {
@@ -80,6 +82,13 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const updateCurrentHour = () => setCurrentHour(new Date().getHours());
+    updateCurrentHour();
+    const timer = window.setInterval(updateCurrentHour, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const stats = useMemo(() => {
     const currency = new Intl.NumberFormat('tr-TR', {
       style: 'currency',
@@ -96,13 +105,22 @@ export default function DashboardPage() {
     ];
   }, [dashboard]);
 
-  const weeklySales = dashboard?.salesLast30Days.slice(-7) ?? [];
-  const maxRevenue = Math.max(...weeklySales.map((sale) => sale.revenue), 1);
-  const chartPoints = weeklySales.map((sale, index) => {
-    const x = weeklySales.length > 1 ? (index / (weeklySales.length - 1)) * 700 : 350;
+  const salesInPeriod = dashboard?.salesLast30Days.slice(-salesPeriod) ?? [];
+  const periodRevenue = salesInPeriod.reduce((total, sale) => total + sale.revenue, 0);
+  const periodOrders = salesInPeriod.reduce((total, sale) => total + sale.orders, 0);
+  const maxRevenue = Math.max(...salesInPeriod.map((sale) => sale.revenue), 1);
+  const chartPoints = salesInPeriod.map((sale, index) => {
+    const x = salesInPeriod.length > 1 ? (index / (salesInPeriod.length - 1)) * 700 : 350;
     const y = 220 - (sale.revenue / maxRevenue) * 190;
+    const showLabel = salesPeriod === 7 || index === 0 || index === salesInPeriod.length - 1 || index % 5 === 0;
 
-    return { x, y, label: new Date(`${sale.date}T00:00:00`).toLocaleDateString('tr-TR', { weekday: 'short' }) };
+    return {
+      x,
+      y,
+      label: showLabel
+        ? new Date(`${sale.date}T00:00:00`).toLocaleDateString('tr-TR', salesPeriod === 7 ? { weekday: 'short' } : { day: '2-digit', month: 'short' })
+        : '',
+    };
   });
   const chartLine = chartPoints.map((point) => `${point.x},${point.y}`).join(' ');
   const chartArea = chartPoints.length
@@ -113,6 +131,11 @@ export default function DashboardPage() {
     new Intl.NumberFormat('tr-TR', { notation: 'compact', maximumFractionDigits: 1 })
       .format(maxRevenue * ratio),
   );
+  const greeting = currentHour === null || currentHour < 12
+    ? 'Günaydın'
+    : currentHour < 18
+      ? 'Tünaydın'
+      : 'İyi akşamlar';
 
   return (
     <div className={styles.shell}>
@@ -188,7 +211,7 @@ export default function DashboardPage() {
         <header className={styles.header}>
           <div>
             <span className={styles.eyebrow}>OPERASYON MERKEZİ</span>
-            <h1>Günaydın, {user?.name?.split(' ')[0] ?? 'işletme sahibi'} <span>✦</span></h1>
+            <h1>{greeting}, {user?.name?.split(' ')[0] ?? 'işletme sahibi'} <span>✦</span></h1>
             <p>İşletmende bugün neler olduğuna göz atalım.</p>
           </div>
 
@@ -248,9 +271,13 @@ export default function DashboardPage() {
             <div className={styles.cardHeading}>
               <div>
                 <h2>Satış performansı</h2>
-                <p>Son 7 günlük sipariş ve ciro görünümü</p>
+                <p>Seçtiğin dönemdeki sipariş ve ciro görünümü</p>
               </div>
-              <select defaultValue="7">
+              <select
+                value={salesPeriod}
+                onChange={(event) => setSalesPeriod(Number(event.target.value) as 7 | 30)}
+                aria-label="Satış grafiği dönemi"
+              >
                 <option value="7">Son 7 gün</option>
                 <option value="30">Son 30 gün</option>
               </select>
@@ -259,9 +286,9 @@ export default function DashboardPage() {
             <div className={styles.revenueSummary}>
               <div>
                 <span>Toplam ciro</span>
-                <strong>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(dashboard?.overview.totalRevenue ?? 0)}</strong>
+                <strong>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(periodRevenue)}</strong>
               </div>
-              <span className={styles.growth}>{dashboard?.overview.totalOrders ?? 0} sipariş</span>
+              <span className={styles.growth}>{periodOrders} sipariş</span>
             </div>
 
             <div className={styles.chart}>
@@ -278,7 +305,7 @@ export default function DashboardPage() {
                   viewBox="0 0 700 230"
                   preserveAspectRatio="none"
                   role="img"
-                  aria-label="Son yedi günlük satış grafiği"
+                  aria-label={`Son ${salesPeriod} günlük satış grafiği`}
                 >
                   <defs>
                     <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
