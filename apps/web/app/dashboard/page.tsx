@@ -59,7 +59,6 @@ export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [salesPeriod, setSalesPeriod] = useState<7 | 30>(7);
-  const [currentHour, setCurrentHour] = useState<number | null>(null);
   const user = getSession()?.user;
 
   function signOut() {
@@ -80,13 +79,6 @@ export default function DashboardPage() {
       window.clearTimeout(timer);
       window.removeEventListener('siparis:orders-changed', refresh);
     };
-  }, []);
-
-  useEffect(() => {
-    const updateCurrentHour = () => setCurrentHour(new Date().getHours());
-    updateCurrentHour();
-    const timer = window.setInterval(updateCurrentHour, 60_000);
-    return () => window.clearInterval(timer);
   }, []);
 
   const stats = useMemo(() => {
@@ -131,7 +123,8 @@ export default function DashboardPage() {
     new Intl.NumberFormat('tr-TR', { notation: 'compact', maximumFractionDigits: 1 })
       .format(maxRevenue * ratio),
   );
-  const greeting = currentHour === null || currentHour < 12
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12
     ? 'Günaydın'
     : currentHour < 18
       ? 'Tünaydın'
