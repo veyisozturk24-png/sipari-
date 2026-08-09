@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { InstagramModule } from './instagram/instagram.module';
+import { MarketplacesModule } from './marketplaces/marketplaces.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InstagramModule } from './instagram/instagram.module';
     DashboardModule,
     WhatsAppModule,
     InstagramModule,
+    MarketplacesModule,
     ProductsModule,
     CustomersModule,
     OrdersModule,

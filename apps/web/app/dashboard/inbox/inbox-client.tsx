@@ -402,6 +402,11 @@ export default function InboxClient() {
             <span>⌁</span>
             Kanallar
           </Link>
+
+          <Link href="/dashboard/marketplaces">
+            <span>🛍</span>
+            Pazaryerleri
+          </Link>
         </nav>
 
         <div className={styles.profile}>

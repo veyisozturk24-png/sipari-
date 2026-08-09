@@ -18,6 +18,7 @@ model Company {
 
   memberships   CompanyMember[]
   channels      ChannelConnection[]
+  marketplaces  MarketplaceConnection[]
   customers     Customer[]
   products      Product[]
   orders        Order[]
@@ -61,6 +62,26 @@ model ChannelConnection {
   @@unique([companyId, platform, externalAccountId])
   @@index([companyId])
   @@map("channel_connections")
+}
+
+model MarketplaceConnection {
+  id                String              @id @default(uuid())
+  companyId         String
+  platform          MarketplacePlatform
+  merchantId        String
+  apiKeyEncrypted   String
+  apiSecretEncrypted String
+  status            MarketplaceStatus   @default(CONNECTED)
+  lastCheckedAt     DateTime?
+  lastError         String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, platform])
+  @@index([companyId])
+  @@map("marketplace_connections")
 }
 
 model Customer {
@@ -246,6 +267,16 @@ enum ChannelPlatform {
 enum ChannelStatus {
   CONNECTED
   DISCONNECTED
+  ERROR
+}
+
+enum MarketplacePlatform {
+  TRENDYOL
+  HEPSIBURADA
+}
+
+enum MarketplaceStatus {
+  CONNECTED
   ERROR
 }
 
