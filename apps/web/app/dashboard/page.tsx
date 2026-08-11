@@ -54,6 +54,20 @@ const quickStartSteps: Array<{
   },
 ];
 
+function getTurkeyGreeting() {
+  const hour = Number(
+    new Intl.DateTimeFormat('tr-TR', {
+      hour: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'Europe/Istanbul',
+    }).format(new Date()),
+  );
+
+  if (hour < 12) return 'Günaydın';
+  if (hour < 18) return 'Tünaydın';
+  return 'İyi akşamlar';
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -123,12 +137,7 @@ export default function DashboardPage() {
     new Intl.NumberFormat('tr-TR', { notation: 'compact', maximumFractionDigits: 1 })
       .format(maxRevenue * ratio),
   );
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12
-    ? 'Günaydın'
-    : currentHour < 18
-      ? 'Tünaydın'
-      : 'İyi akşamlar';
+  const greeting = getTurkeyGreeting();
 
   return (
     <div className={styles.shell}>
