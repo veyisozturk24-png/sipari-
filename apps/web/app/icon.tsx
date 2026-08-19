@@ -19,14 +19,15 @@ export default function Icon() {
           justifyContent: "center",
           borderRadius: 16,
           background:
-            "linear-gradient(135deg, #f97316 0%, #e11d48 45%, #6d28d9 100%)",
+            "linear-gradient(135deg, #151332 0%, #4c1d95 56%, #e95855 100%)",
           overflow: "hidden",
         }}
       >
         <svg width="52" height="52" viewBox="0 0 48 48" fill="none">
-          <path d="M14 13.5h20a4 4 0 0 1 4 4v2.2a4 4 0 0 1-4 4H18a4 4 0 0 0-4 4v2.1a4 4 0 0 0 4 4h16" stroke="white" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M31.5 9.5v6M31.5 32.5v6" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-          <circle cx="34" cy="36" r="2.6" fill="white" />
+          <rect x="9" y="10" width="30" height="28" rx="7" fill="white" />
+          <path d="M16 19h12M16 25h8" stroke="#5B21B6" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="m30 27 3 3 6-7" stroke="#F05B58" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="36.5" cy="12.5" r="3.5" fill="#FFB14A" />
         </svg>
       </div>
     ),
