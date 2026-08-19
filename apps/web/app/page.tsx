@@ -1,5 +1,6 @@
 
 import AppIcon, { type AppIconName } from "@/components/app-icon";
+import BrandLogo from "@/components/brand-logo";
 import PilotDemoFlow from "@/components/pilot-demo-flow";
 
 const features = [
@@ -59,13 +60,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-slate-50 text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <a href="#" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-rose-500 to-violet-700 text-lg font-black text-white shadow-lg shadow-violet-300/60">
-              S
-            </span>
-
-            <span className="text-xl font-black">Siparİş</span>
-          </a>
+          <a href="#" aria-label="Siparİş ana sayfa"><BrandLogo /></a>
 
           <nav className="hidden gap-8 text-sm font-semibold text-slate-600 md:flex">
             <a href="#ozellikler" className="hover:text-slate-950">
@@ -497,13 +492,7 @@ export default function Home() {
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-violet-700 font-black text-white">
-                S
-              </span>
-
-              <span className="text-lg font-black">Siparİş</span>
-            </div>
+            <BrandLogo size={40} />
 
             <p className="mt-3 text-sm text-slate-500">
               Mesajdan siparişe, siparişten teslimata.
