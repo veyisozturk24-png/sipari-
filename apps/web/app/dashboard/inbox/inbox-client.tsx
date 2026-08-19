@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api';
 import { getActiveCompanyId, getSession } from '@/lib/auth';
 import styles from './inbox.module.css';
 import ConvertOrderModal from './convert-order-modal';
+import NewOrderButton from '../new-order-button';
 
 type Channel = 'WhatsApp' | 'Instagram' | 'Facebook';
 type ConnectableChannel = 'WHATSAPP' | 'INSTAGRAM';
@@ -426,10 +427,13 @@ export default function InboxClient() {
             <p>Tüm satış kanallarındaki müşteri konuşmalarını yönet.</p>
           </div>
 
-          <button type="button" onClick={() => setIsConnectionFormOpen((current) => !current)}>
-            <i />
-            {channels.length > 0 ? `${channels.length} kanal bağlı` : 'Kanal bağla'}
-          </button>
+          <div className={styles.pageActions}>
+            <NewOrderButton />
+            <button type="button" onClick={() => setIsConnectionFormOpen((current) => !current)}>
+              <i />
+              {channels.length > 0 ? `${channels.length} kanal bağlı` : 'Kanal bağla'}
+            </button>
+          </div>
         </header>
 
         <section className={styles.inbox}>
@@ -587,7 +591,13 @@ export default function InboxClient() {
               ))}
 
               {!selectedConversation && (
-                <div className={styles.emptySearch}>WhatsApp veya Instagram hesabınızı Meta üzerinden bağladığınızda müşterilerden gelen mesajlar burada görünecek.</div>
+                <div className={styles.manualOrderHint}>
+                  <span>✦</span>
+                  <div>
+                    <strong>Mesajdan manuel sipariş kaydı</strong>
+                    <p>Meta bağlantısı olmadan da DM’yi telefonundan yanıtlayıp, sağ üstteki <b>Yeni sipariş</b> ile müşteri, ürün ve teslimat bilgilerini Siparİş’e kaydedebilirsin.</p>
+                  </div>
+                </div>
               )}
             </div>
 
