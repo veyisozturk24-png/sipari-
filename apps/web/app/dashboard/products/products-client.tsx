@@ -416,7 +416,7 @@ export default function ProductsClient() {
               <b>3</b>
             </Link>
 
-            <Link href="/dashboard">
+            <Link href="/dashboard/orders">
               <span>▣</span>
               Siparişler
             </Link>

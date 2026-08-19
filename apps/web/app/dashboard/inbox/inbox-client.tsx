@@ -372,7 +372,7 @@ export default function InboxClient() {
             Gelen Kutusu
           </Link>
 
-          <Link href="/dashboard">
+          <Link href="/dashboard/orders">
             <span>▣</span>
             Siparişler
           </Link>

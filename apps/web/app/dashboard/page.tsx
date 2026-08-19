@@ -162,7 +162,7 @@ export default function DashboardPage() {
             <span><AppIcon name="layout" /></span> Genel Bakış
           </Link>
           <Link href="/dashboard/inbox"><span><AppIcon name="inbox" /></span> Gelen Kutusu</Link>
-          <Link href="/dashboard"><span><AppIcon name="orders" /></span> Siparişler</Link>
+          <Link href="/dashboard/orders"><span><AppIcon name="orders" /></span> Siparişler</Link>
           <Link href="/dashboard/products"><span><AppIcon name="box" /></span> Ürünler</Link>
           <Link href="/dashboard/customers"><span><AppIcon name="customers" /></span> Müşteriler</Link>
           <Link href="/dashboard/products"><span><AppIcon name="stock" /></span> Stok Yönetimi</Link>

@@ -8,6 +8,7 @@ import styles from './mobile-navigation.module.css';
 const items = [
   { href: '/dashboard', label: 'Özet', icon: 'layout' as AppIconName },
   { href: '/dashboard/inbox', label: 'Mesajlar', icon: 'inbox' as AppIconName },
+  { href: '/dashboard/orders', label: 'Siparişler', icon: 'orders' as AppIconName },
   { href: '/dashboard/products', label: 'Ürünler', icon: 'box' as AppIconName },
   { href: '/dashboard/customers', label: 'Müşteriler', icon: 'customers' as AppIconName },
   { href: '/dashboard/shipping', label: 'Kargo', icon: 'truck' as AppIconName },
