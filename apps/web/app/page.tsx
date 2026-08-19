@@ -124,7 +124,7 @@ export default function Home() {
                 href="#pilot"
               className="rounded-xl bg-slate-950 px-7 py-4 text-center font-bold text-white shadow-xl shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
-                Ücretsiz pilot başvurusu
+                14 gün ücretsiz dene
               </a>
 
               <a
@@ -143,13 +143,12 @@ export default function Home() {
             </p>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-              Pilot aşamasında WhatsApp ve Instagram bağlantılarını işletmenizin
-              hesabına göre birlikte kuruyoruz. Bağlantı tamamlanana kadar
-              sipariş ve kargo akışını panelden hemen kullanabilirsiniz.
+              İlk kurulumda yanındayız. Sosyal medya bağlantınız tamamlanana kadar
+              sipariş, stok ve kargo akışını panelden hemen kullanabilirsiniz.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-slate-600">
-              {['Ücretsiz kurulum desteği', 'Kredi kartı gerekmez', 'İlk işletmelere özel koşullar'].map((item) => <span key={item} className="inline-flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-100 text-emerald-700"><AppIcon name="check" size={13} strokeWidth={2.5} /></span>{item}</span>)}
+              {['14 gün ücretsiz kullanım', 'Ücretsiz kurulum desteği', 'Kredi kartı gerekmez'].map((item) => <span key={item} className="inline-flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-100 text-emerald-700"><AppIcon name="check" size={13} strokeWidth={2.5} /></span>{item}</span>)}
             </div>
           </div>
 
@@ -309,22 +308,23 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[1fr_430px] lg:items-center">
             <div>
               <p className="font-black text-orange-400">
-                İlk pilot işletmelerimizi seçiyoruz
+                İlk 10 işletmeye özel pilot programı
               </p>
 
               <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">
-                Siparişlerinizi daha düzenli yönetmeye başlayın.
+                14 gün ücretsiz deneyin,
+                <span className="block text-violet-300">kurulumu birlikte yapalım.</span>
               </h2>
 
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-                İhtiyacınızı birlikte değerlendirelim. Uygun işletmelerle
-                kurulum, test ve geri bildirim sürecini birebir yürütüyoruz.
+                Instagram, WhatsApp veya manuel aldığınız siparişleri; ürün, stok,
+                müşteri ve kargo süreciyle tek yerde yönetmeye başlayın.
               </p>
 
               <div className="mt-8 space-y-3 text-sm text-slate-300">
-                <p>✓ Ücretsiz ihtiyaç analizi</p>
-                <p>✓ Ürün, müşteri ve sipariş kurulumu desteği</p>
-                <p>✓ WhatsApp / Instagram bağlantısı için teknik yönlendirme</p>
+                <p>✓ İlk ürün ve müşteri kayıtlarında kurulum desteği</p>
+                <p>✓ Sipariş ve kargo akışını birlikte test etme</p>
+                <p>✓ Pilot sonunda devam etmek tamamen sizin seçiminiz</p>
               </div>
             </div>
 
@@ -363,10 +363,11 @@ export default function Home() {
                 autoComplete="off"
               />
 
-              <h3 className="text-xl font-black">Pilot başvuru formu</h3>
+              <div className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-700">İlk 10 işletme</div>
+              <h3 className="mt-3 text-xl font-black">14 gün ücretsiz pilot</h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Bilgilerinizi bırakın, işletmenizi birlikte değerlendirelim.
+                Bilgilerinizi bırakın; size ulaşıp kurulumu birlikte planlayalım.
               </p>
 
               <div className="mt-6 space-y-4">
@@ -481,12 +482,12 @@ export default function Home() {
                   type="submit"
                   className="w-full rounded-xl bg-gradient-to-r from-violet-700 to-orange-500 px-5 py-4 font-black text-white"
                 >
-                  Pilot programa başvur
+                  Ücretsiz pilot için başvur
                 </button>
               </div>
 
               <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-                Başvuru ücretsizdir. Kredi kartı bilgisi istenmez.
+                Kredi kartı istenmez. Pilot sonunda devam etmek zorunlu değildir.
               </p>
             </form>
           </div>
